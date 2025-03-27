@@ -22,7 +22,7 @@ const MovieDetails = () => {
   // Function to fetch data directly from TMDB as a fallback
   const fetchFromTMDB = async (endpoint) => {
     // Use the API key in the query string method
-    const url = `${TMDB_BASE_URL}${endpoint}?api_key=${TMDB_API_KEY}`;
+    const url = `${API_BASE_URL}${endpoint}?api_key=${TMDB_API_KEY}`;
     console.log(`Fetching from TMDB: ${url}`);
     
     const response = await fetch(url);
@@ -44,8 +44,8 @@ const MovieDetails = () => {
       }
     };
     
-    console.log(`Fetching from TMDB with token: ${TMDB_BASE_URL}${endpoint}`);
-    const response = await fetch(`${TMDB_BASE_URL}${endpoint}`, options);
+    console.log(`Fetching from TMDB with token: ${API_BASE_URL}${endpoint}`);
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, options);
     if (!response.ok) {
       console.error(`TMDB API error: ${response.status}`);
       console.error(`Response: ${await response.text()}`);
@@ -65,11 +65,11 @@ const MovieDetails = () => {
         // Try with API key method first
         try {
           // Direct TMDB API calls
-          const movieData = await fetchFromTMDB(`/movie/${id}`);
+          const movieData = await fetchFromTMDB(`/movies/${id}`);
           setMovie(movieData);
           
           try {
-            const videosData = await fetchFromTMDB(`/movie/${id}/videos`);
+            const videosData = await fetchFromTMDB(`/movies/${id}/videos`);
             const trailer = videosData.results?.find(
               video => video.type === 'Trailer' && video.site === 'YouTube'
             );
@@ -79,7 +79,7 @@ const MovieDetails = () => {
           }
           
           try {
-            const creditsData = await fetchFromTMDB(`/movie/${id}/credits`);
+            const creditsData = await fetchFromTMDB(`/movies/${id}/credits`);
             setCast(creditsData.cast?.slice(0, 10) || []);
           } catch (err) {
             console.warn("Could not fetch cast:", err);
@@ -88,11 +88,11 @@ const MovieDetails = () => {
           console.log("API key method failed, trying token method:", err);
           
           // If API key method fails, try with token method
-          const movieData = await fetchFromTMDBWithToken(`/movie/${id}`);
+          const movieData = await fetchFromTMDBWithToken(`/movies/${id}`);
           setMovie(movieData);
           
           try {
-            const videosData = await fetchFromTMDBWithToken(`/movie/${id}/videos`);
+            const videosData = await fetchFromTMDBWithToken(`/movies/${id}/videos`);
             const trailer = videosData.results?.find(
               video => video.type === 'Trailer' && video.site === 'YouTube'
             );
@@ -102,7 +102,7 @@ const MovieDetails = () => {
           }
           
           try {
-            const creditsData = await fetchFromTMDBWithToken(`/movie/${id}/credits`);
+            const creditsData = await fetchFromTMDBWithToken(`/movies/${id}/credits`);
             setCast(creditsData.cast?.slice(0, 10) || []);
           } catch (castErr) {
             console.warn("Could not fetch cast:", castErr);
