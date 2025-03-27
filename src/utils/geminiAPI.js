@@ -2,7 +2,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { getLocalMovieRecommendation } from "./movieRecommendations";
 
 // Initialize the Generative AI API with your updated API key
-const API_KEY = "AIzaSyDjhEAagH2lxfWueSFre62xhkiFueqP7r0";
+const API_KEY = "AIzaSyDl8Yc1ZOwxFGznc2HEGIJDcDkamsOcdo4";
 const genAI = new GoogleGenerativeAI(API_KEY);
 
 // Simple in-memory cache
@@ -30,22 +30,10 @@ export const getMovieRecommendations = async (userMessage) => {
     }
     
     // Initialize the model
-    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
-
-    // Create a chat session
-    const chat = model.startChat({
-      generationConfig: {
-        temperature: 0.7,
-        topK: 40,
-        topP: 0.95,
-        maxOutputTokens: 1000,
-      },
-      systemInstruction: SYSTEM_PROMPT,
-    });
-
-    // Send message to Gemini
-    const result = await chat.sendMessage(userMessage);
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-002" });
+    const result = await model.generateContent(userMessage);
     const response = result.response.text();
+    
     
     // Cache this response
     cacheResponse(userMessage, response);
@@ -92,7 +80,7 @@ export const isMovieRelatedQuery = async (query) => {
       return true;
     }
     
-    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-002" });
     
     const result = await model.generateContent(`
       Determine if the following query is related to movies, TV shows, actors, directors, or entertainment.
