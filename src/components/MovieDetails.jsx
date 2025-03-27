@@ -8,6 +8,7 @@ import CastCarousel from './CastCarousel';
 import SimilarMovies from './SimilarMovies';
 import MovieTrailerModal from './MovieTrailerModal';
 import BackdropImage from './BackdropImage';
+import ChatbotContainer from './ChatbotContainer';
 import './MovieDetails.css';
 
 const MovieDetails = () => {
@@ -226,6 +227,9 @@ const MovieDetails = () => {
           title={movie.title}
         />
       )}
+      
+      {/* Add the chatbot for personalized recommendations based on this movie */}
+      <ChatbotContainer isMovieDetail={true} movieTitle={movie.title} />
     </div>
   );
 };

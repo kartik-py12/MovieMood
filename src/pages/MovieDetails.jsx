@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import Spinner from '../components/Spinner';
+import ChatbotButton from "../components/ChatbotButton";
+import Chatbot from "../components/Chatbot";
+
 
 const API_BASE_URL = "https://trendingmoviebackend-1.onrender.com/api";
 // Update with your actual TMDB credentials
@@ -18,6 +21,8 @@ const MovieDetails = () => {
   const [error, setError] = useState(null);
   const [retryCount, setRetryCount] = useState(0);
   const [useFallbackApi, setUseFallbackApi] = useState(false);
+  const [isChatbotOpen, setIsChatbotOpen] = useState(false);
+
 
   // Function to fetch data directly from TMDB as a fallback
   const fetchFromTMDB = async (endpoint) => {
@@ -181,6 +186,11 @@ const MovieDetails = () => {
     ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
     : '/no-movie.png';
 
+    const toggleChatbot = () => {
+        setIsChatbotOpen(!isChatbotOpen);
+      };
+    
+
   return (
     <main>
       {backdropUrl && (
@@ -275,6 +285,9 @@ const MovieDetails = () => {
           </div>
         </div>
       </div>
+        <ChatbotButton toggleChatbot={toggleChatbot} />
+            {isChatbotOpen && <Chatbot closeChatbot={() => setIsChatbotOpen(false)} />}
+        
     </main>
   );
 };

@@ -6,6 +6,8 @@ import MovieCard from "../components/MovieCard";
 import { getTrending, updateSearchCount } from "../appwrite";
 import ChatbotButton from "../components/ChatbotButton";
 import Chatbot from "../components/Chatbot";
+import Footer from "../components/common/Footer";
+import Pagination from "../components/common/Pagination";
 
 const API_BASE_URL = "https://trendingmoviebackend-1.onrender.com/api";
 // Update with your actual TMDB credentials
@@ -184,6 +186,8 @@ const Home = () => {
       
       <ChatbotButton toggleChatbot={toggleChatbot} />
       {isChatbotOpen && <Chatbot closeChatbot={() => setIsChatbotOpen(false)} />}
+          {/* <Pagination/> */}
+          <Footer/>
     </main>
   )
 }

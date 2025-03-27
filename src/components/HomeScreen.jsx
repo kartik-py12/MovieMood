@@ -4,8 +4,10 @@ import { tmdbApi } from '../utils/tmdbApi';
 import MovieSlider from './MovieSlider';
 import MovieGrid from './MovieGrid';
 import GenreSelector from './GenreSelector';
+import Pagination from './common/Pagination';
 import Loader from './common/Loader';
 import ErrorMessage from './common/ErrorMessage';
+import Footer from './common/Footer';
 import './HomeScreen.css';
 
 const HomeScreen = () => {
@@ -17,6 +19,10 @@ const HomeScreen = () => {
   const [genres, setGenres] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
 
   // Fetch all movie data needed for the home screen
   useEffect(() => {
@@ -37,18 +43,22 @@ const HomeScreen = () => {
         
         // Fetch multiple movie categories in parallel
         const [popular, topRated, upcoming] = await Promise.all([
-          tmdbApi.getPopularMovies(),
-          tmdbApi.getTopRatedMovies(),
-          tmdbApi.getUpcomingMovies()
+          tmdbApi.getPopularMovies(currentPage),
+          tmdbApi.getTopRatedMovies(currentPage),
+          tmdbApi.getUpcomingMovies(currentPage)
         ]);
         
         setPopularMovies(popular.results || []);
         setTopRatedMovies(topRated.results || []);
         setUpcomingMovies(upcoming.results || []);
+        setTotalPages(popular.total_pages || 0);
         
         // If we have an action genre, fetch action movies
         if (actionGenre) {
-          const actionMovies = await tmdbApi.discoverMovies({ with_genres: actionGenre.id });
+          const actionMovies = await tmdbApi.discoverMovies({ 
+            with_genres: actionGenre.id,
+            page: currentPage
+          });
           setGenreMovies(actionMovies.results || []);
         }
       } catch (err) {
@@ -60,7 +70,7 @@ const HomeScreen = () => {
     };
     
     fetchHomeData();
-  }, []);
+  }, [currentPage]);
 
   // Handle genre selection
   const handleGenreSelect = async (genre) => {
@@ -70,7 +80,10 @@ const HomeScreen = () => {
     setLoading(true);
     
     try {
-      const genreMovies = await tmdbApi.discoverMovies({ with_genres: genre.id });
+      const genreMovies = await tmdbApi.discoverMovies({ 
+        with_genres: genre.id,
+        page: currentPage
+      });
       setGenreMovies(genreMovies.results || []);
     } catch (err) {
       console.error(`Error fetching ${genre.name} movies:`, err);
@@ -78,6 +91,11 @@ const HomeScreen = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handlePageChange = (newPage) => {
+    setCurrentPage(newPage);
+    window.scrollTo(0, 0);
   };
 
   if (loading && (!popularMovies.length && !topRatedMovies.length)) {
@@ -89,63 +107,78 @@ const HomeScreen = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-900">
-      {popularMovies.length > 0 && (
-        <section className="w-full">
-          <MovieSlider movies={popularMovies.slice(0, 10)} />
-        </section>
-      )}
-      
-      <div className="container mx-auto px-4 py-8 space-y-12">
+    <>
+      <div className="min-h-screen bg-gray-900">
         {popularMovies.length > 0 && (
-          <section>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-2xl font-bold text-white">Popular Movies</h2>
-              <Link to="/movies/popular" className="text-blue-400 hover:text-blue-300 transition-colors">View All</Link>
-            </div>
-            <MovieGrid movies={popularMovies.slice(0, 12)} />
+          <section className="w-full">
+            <MovieSlider movies={popularMovies.slice(0, 10)} />
           </section>
         )}
         
-        {topRatedMovies.length > 0 && (
-          <section>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-2xl font-bold text-white">Top Rated Movies</h2>
-              <Link to="/movies/top-rated" className="text-blue-400 hover:text-blue-300 transition-colors">View All</Link>
-            </div>
-            <MovieGrid movies={topRatedMovies.slice(0, 12)} />
-          </section>
-        )}
-        
-        {upcomingMovies.length > 0 && (
-          <section>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-2xl font-bold text-white">Upcoming Movies</h2>
-              <Link to="/movies/upcoming" className="text-blue-400 hover:text-blue-300 transition-colors">View All</Link>
-            </div>
-            <MovieGrid movies={upcomingMovies.slice(0, 12)} />
-          </section>
-        )}
-        
-        {genres.length > 0 && (
-          <section>
-            <div className="mb-4">
-              <h2 className="text-2xl font-bold text-white mb-2">Browse by Genre</h2>
-              <GenreSelector 
-                genres={genres} 
-                selectedGenre={selectedGenre}
-                onSelectGenre={handleGenreSelect} 
+        <div className="container mx-auto px-4 py-8 space-y-12">
+          {popularMovies.length > 0 && (
+            <section>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-2xl font-bold text-white">Popular Movies</h2>
+                <Link to="/movies/popular" className="text-blue-400 hover:text-blue-300 transition-colors">View All</Link>
+              </div>
+              <MovieGrid movies={popularMovies.slice(0, 12)} />
+            </section>
+          )}
+          
+          {topRatedMovies.length > 0 && (
+            <section>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-2xl font-bold text-white">Top Rated Movies</h2>
+                <Link to="/movies/top-rated" className="text-blue-400 hover:text-blue-300 transition-colors">View All</Link>
+              </div>
+              <MovieGrid movies={topRatedMovies.slice(0, 12)} />
+            </section>
+          )}
+          
+          {upcomingMovies.length > 0 && (
+            <section>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-2xl font-bold text-white">Upcoming Movies</h2>
+                <Link to="/movies/upcoming" className="text-blue-400 hover:text-blue-300 transition-colors">View All</Link>
+              </div>
+              <MovieGrid movies={upcomingMovies.slice(0, 12)} />
+            </section>
+          )}
+          
+          {genres.length > 0 && (
+            <section>
+              <div className="mb-4">
+                <h2 className="text-2xl font-bold text-white mb-2">Browse by Genre</h2>
+                <GenreSelector 
+                  genres={genres} 
+                  selectedGenre={selectedGenre}
+                  onSelectGenre={handleGenreSelect} 
+                />
+              </div>
+              {genreMovies.length > 0 ? (
+                <MovieGrid movies={genreMovies.slice(0, 12)} />
+              ) : (
+                <p className="text-center py-10 text-gray-400">No movies found for this genre</p>
+              )}
+            </section>
+          )}
+          
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex justify-center mt-8">
+              <Pagination 
+                currentPage={currentPage}
+                totalPages={Math.min(totalPages, 10)} // Limit to 10 pages
+                onPageChange={handlePageChange}
               />
             </div>
-            {genreMovies.length > 0 ? (
-              <MovieGrid movies={genreMovies.slice(0, 12)} />
-            ) : (
-              <p className="text-center py-10 text-gray-400">No movies found for this genre</p>
-            )}
-          </section>
-        )}
+          )}
+        </div>
       </div>
-    </div>
+      
+      <Footer />
+    </>
   );
 };
 

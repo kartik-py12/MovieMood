@@ -53,6 +53,78 @@
   }
 }
 
+/* Markdown content styling */
+.markdown-content strong,
+.markdown-content strong a {
+  @apply font-bold text-yellow-300;
+}
+
+.markdown-content p {
+  @apply mb-2 last:mb-0;
+}
+
+.markdown-content ul {
+  @apply list-disc pl-5 my-2;
+}
+
+.markdown-content ol {
+  @apply list-decimal pl-5 my-2;
+}
+
+.markdown-content li {
+  @apply mb-1;
+}
+
+.markdown-content h2, .markdown-content h3 {
+  @apply font-bold text-white mt-3 mb-1;
+}
+
+/* Improved Markdown content styling */
+.markdown-content {
+  @apply text-gray-200;
+}
+
+.markdown-content p {
+  @apply mb-2 last:mb-0;
+}
+
+.markdown-content ul {
+  @apply list-disc pl-5 my-2;
+}
+
+.markdown-content li {
+  @apply mb-1 last:mb-0;
+}
+
+.markdown-content .font-bold {
+  @apply text-yellow-300;
+}
+
+/* Add some spacing between sections */
+.markdown-content > div {
+  @apply mb-2;
+}
+
+/* Chatbot animations */
+@keyframes typing {
+  0% { opacity: 0.3; }
+  50% { opacity: 1; }
+  100% { opacity: 0.3; }
+}
+
+.typing-dot {
+  @apply bg-gray-500 h-2 w-2 rounded-full;
+  animation: typing 1.4s infinite both;
+}
+
+.typing-dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.typing-dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
 @layer components {
   .pattern {
     @apply bg-hero-pattern w-screen h-screen bg-center bg-cover absolute z-0;
@@ -148,7 +220,7 @@
 }
 
 @utility text-gradient {
-  @apply bg-linear-to-r from-[#D6C7FF] to-[#AB8BFF] bg-clip-text text-transparent;
+  @apply bg-gradient-to-r from-[#D6C7FF] to-[#AB8BFF] bg-clip-text text-transparent;
 }
 
 @utility fancy-text {
