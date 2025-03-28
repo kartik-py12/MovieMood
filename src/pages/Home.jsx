@@ -8,6 +8,7 @@ import ChatbotButton from "../components/ChatbotButton";
 import Chatbot from "../components/Chatbot";
 import Footer from "../components/common/Footer";
 import Pagination from "../components/common/Pagination";
+import { Link } from "react-router-dom";
 
 const API_BASE_URL = "https://trendingmoviebackend-1.onrender.com/api";
 // Update with your actual TMDB credentials
@@ -158,10 +159,12 @@ const Home = () => {
             <h2>Trending Movies</h2>
             <ul>
               {trendingMovies.map((movie, index) => (
+                  <Link to={`/movie/${movie.movie_id}`} key={movie.$id}>
                 <li key={movie.$id}>
                   <p>{index+1}</p>
                   <img src={movie.poster_url} alt={movie.title}></img>
                 </li>
+                </Link>
               ))}
             </ul>
           </section>
