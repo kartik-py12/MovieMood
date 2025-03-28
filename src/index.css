@@ -104,6 +104,37 @@
   @apply text-yellow-300;
 }
 
+/* Enhanced Markdown content styling */
+.markdown-content .text-yellow-300,
+.markdown-content .font-bold {
+  @apply text-yellow-300 font-bold;
+}
+
+.markdown-content p {
+  @apply mb-2 last:mb-0;
+}
+
+.markdown-content ul, 
+.markdown-content ol {
+  @apply pl-5 my-2;
+}
+
+.markdown-content ul {
+  @apply list-disc;
+}
+
+.markdown-content ol {
+  @apply list-decimal;
+}
+
+.markdown-content li {
+  @apply mb-1 last:mb-0;
+}
+
+.markdown-content .italic {
+  @apply italic text-gray-200;
+}
+
 /* Add some spacing between sections */
 .markdown-content > div {
   @apply mb-2;

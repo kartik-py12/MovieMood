@@ -1,175 +1,217 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { getMovieRecommendations, isMovieRelatedQuery } from '../utils/geminiAPI';
+import { FaPaperPlane, FaTimes } from 'react-icons/fa';
+import { getMovieRecommendationsWithHistory, isMovieRelatedQuery } from '../utils/geminiAPI';
+import { MarkdownFormatter } from './MarkdownFormatter';
 
-const Chatbot = ({ closeChatbot }) => {
-  const [messages, setMessages] = useState([
-    { 
-      sender: 'bot', 
-      text: "Hi there! I'm your movie recommendation assistant. Tell me how you're feeling or what kind of movies you're interested in.",
-      source: "initial"
-    }
-  ]);
-  const [input, setInput] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
+const Chatbot = ({ closeChatbot, isMovieDetail = false, movieTitle = null }) => {
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [conversationContext, setConversationContext] = useState([]);
   const messagesEndRef = useRef(null);
+  const inputRef = useRef(null);
 
-  // Auto-scroll to bottom when messages update
+  // Initialize with welcome message
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (messages.length === 0) {
+      const initialMessage = movieTitle 
+        ? `Hi there! You're viewing "${movieTitle}". What kind of similar movies are you in the mood for?`
+        : "Hi there! What kind of movie are you in the mood for today?";
+      
+      const initialSystemMessage = { 
+        text: initialMessage, 
+        isUser: false 
+      };
+      
+      setMessages([initialSystemMessage]);
+      setConversationContext([{
+        role: "assistant",
+        parts: [{ text: initialMessage }]
+      }]);
+    }
+  }, [messages.length, movieTitle]);
+
+  // Scroll to bottom when messages change
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const handleSend = async (e) => {
-    e.preventDefault();
+  // Focus input when chat opens
+  useEffect(() => {
+    setTimeout(() => inputRef.current?.focus(), 100);
+  }, []);
+
+  const handleSendMessage = async (e) => {
+    e?.preventDefault();
+    
     if (!input.trim()) return;
     
-    // Add user message
-    const userMessage = { sender: 'user', text: input };
-    setMessages(prevMessages => [...prevMessages, userMessage]);
-    setInput('');
-    setIsTyping(true);
+    const userMessage = input.trim();
     
-    // Set a timeout to ensure the typing indicator displays for at least 1 second
-    const minTypingTime = new Promise(resolve => setTimeout(resolve, 1000));
+    // Add user message to UI
+    setMessages(prev => [...prev, { text: userMessage, isUser: true }]);
+    
+    // Update conversation context with user message
+    const updatedContext = [
+      ...conversationContext,
+      { role: "user", parts: [{ text: userMessage }] }
+    ];
+    setConversationContext(updatedContext);
+    
+    setInput("");
+    setIsLoading(true);
     
     try {
-      // In parallel: Check if the query is movie-related + ensure typing indicator shows for a min time
-      const [isMovieRelated] = await Promise.all([
-        isMovieRelatedQuery(input),
-        minTypingTime
-      ]);
+      // Check if it's a simple mood word
+      const isMoodWord = /^(happy|sad|excited|relaxed|bored|romantic|thoughtful|scared)$/i.test(userMessage);
       
-      if (isMovieRelated) {
-        // Get response from Gemini API (or fallback)
-        const { text, source } = await getMovieRecommendations(input);
+      // Skip relevance check for single mood words or if on movie detail page
+      const skipRelevanceCheck = isMoodWord || isMovieDetail || conversationContext.length > 0;
+      
+      // Enhanced movie context handling
+      const isAboutThisMovie = isMovieDetail && movieTitle && 
+        (userMessage.toLowerCase().includes('this movie') || 
+         userMessage.toLowerCase().includes('the movie') ||
+         userMessage.toLowerCase().includes('similar') ||
+         userMessage.toLowerCase().includes('like it') ||
+         userMessage.toLowerCase().includes('recommend'));
+      
+      // If on movie detail page, enhance the query with movie context
+      const enhancedMessage = isMovieDetail && movieTitle ? 
+        isAboutThisMovie ?
+          `About the movie "${movieTitle}": ${userMessage}` :
+          `${userMessage} (Context: User is viewing the movie "${movieTitle}")` :
+        userMessage;
+      
+      let isRelated = skipRelevanceCheck ? true : await isMovieRelatedQuery(userMessage);
+      
+      if (isRelated) {
+        // Use the updated API function that supports history
+        const response = await getMovieRecommendationsWithHistory(
+          enhancedMessage, 
+          updatedContext
+        );
         
-        // Add bot response
-        setMessages(prevMessages => [
-          ...prevMessages,
-          { sender: 'bot', text, source }
+        // Add AI response to UI
+        setMessages(prev => [...prev, { text: response.text, isUser: false }]);
+        
+        // Update conversation context with AI response
+        setConversationContext([
+          ...updatedContext,
+          { role: "assistant", parts: [{ text: response.text }] }
         ]);
+        
       } else {
-        // Add polite decline for non-movie questions
-        setMessages(prevMessages => [
-          ...prevMessages,
-          { 
-            sender: 'bot', 
-            text: "I'm designed to help with movie recommendations. Could you ask me something about movies, TV shows, or what you'd like to watch?",
-            source: "filter"
-          }
+        const errorMessage = "I'm sorry, I can only help with movie-related questions. Can you tell me what kind of movie you're looking for?";
+        
+        // Add error message to UI
+        setMessages(prev => [...prev, { text: errorMessage, isUser: false }]);
+        
+        // Update conversation context with error response
+        setConversationContext([
+          ...updatedContext,
+          { role: "assistant", parts: [{ text: errorMessage }] }
         ]);
       }
     } catch (error) {
       console.error("Error in chat:", error);
-      setMessages(prevMessages => [
-        ...prevMessages,
-        { 
-          sender: 'bot', 
-          text: "Sorry, I encountered an error. Please try asking again with a different question about movies.",
-          source: "error"
-        }
+      
+      const errorMessage = "Sorry, I'm having trouble processing your request. Can you try again?";
+      
+      setMessages(prev => [...prev, { text: errorMessage, isUser: false }]);
+      
+      // Update conversation context with error response
+      setConversationContext([
+        ...updatedContext,
+        { role: "assistant", parts: [{ text: errorMessage }] }
       ]);
     } finally {
-      setIsTyping(false);
+      setIsLoading(false);
+      setTimeout(() => inputRef.current?.focus(), 100);
     }
   };
 
-  // Generate a typing indicator with random duration to simulate natural typing
-  const renderTypingIndicator = () => {
-    return (
-      <div className="mb-4">
-        <div className="inline-block p-3 rounded-lg bg-light-100/10 text-white">
-          <div className="flex space-x-1">
-            <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-            <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
-            <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.4s'}}></div>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
   return (
-    <div className="fixed bottom-24 right-6 w-80 sm:w-96 bg-dark-100 rounded-lg shadow-lg z-50 flex flex-col max-h-[500px] border border-light-100/20">
+    <div className="fixed bottom-6 right-6 w-[350px] h-[500px] bg-gray-800 rounded-lg shadow-xl flex flex-col z-50 overflow-hidden">
       {/* Header */}
-      <div className="flex justify-between items-center p-4 border-b border-light-100/10">
-        <h3 className="font-bold text-white">Movie Recommendations</h3>
+      <div className="flex items-center justify-between bg-gray-900 px-4 py-3">
+        <h3 className="text-white font-medium">Movie Recommendations</h3>
         <button 
           onClick={closeChatbot}
-          className="text-gray-400 hover:text-white"
+          className="text-gray-400 hover:text-white transition-colors"
+          aria-label="Close chat"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-            <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-          </svg>
+          <FaTimes />
         </button>
       </div>
       
-      {/* Messages area */}
+      {/* Messages */}
       <div className="flex-1 p-4 overflow-y-auto">
-        {messages.map((message, index) => (
+        {messages.map((msg, index) => (
           <div 
             key={index} 
-            className={`mb-4 ${message.sender === 'user' ? 'text-right' : ''}`}
+            className={`flex w-full ${msg.isUser ? 'justify-end' : 'justify-start'} mb-4`}
           >
             <div 
-              className={`inline-block p-3 rounded-lg max-w-[80%] ${
-                message.sender === 'user' 
-                  ? 'bg-indigo-600 text-white' 
-                  : 'bg-light-100/10 text-white'
+              className={`max-w-[85%] rounded-lg px-4 py-3 ${
+                msg.isUser 
+                  ? 'bg-blue-600 text-white rounded-tr-none'
+                  : 'bg-gray-700 text-white rounded-tl-none'
               }`}
             >
-              <pre className="whitespace-pre-wrap font-dm-sans text-sm">{message.text}</pre>
-              
-              {/* Show indicator for fallback responses */}
-              {message.sender === 'bot' && message.source === 'fallback' && (
-                <div className="mt-2 text-xs text-gray-400 italic flex items-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  Using offline database (API rate limited)
-                </div>
-              )}
-              
-              {/* Show indicator for cached responses */}
-              {message.sender === 'bot' && message.source === 'cache' && (
-                <div className="mt-2 text-xs text-gray-400 italic flex items-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                  </svg>
-                  Cached response
-                </div>
+              {msg.isUser ? (
+                <p className="m-0">{msg.text}</p>
+              ) : (
+                <div 
+                  className="markdown-content" 
+                  dangerouslySetInnerHTML={{ 
+                    __html: msg.text
+                      .replace(/\*\*([^*]+)\*\*/g, '<span class="text-yellow-300 font-bold">$1</span>')
+                      .replace(/\*([^*]+)\*/g, '<span class="italic">$1</span>')
+                      .replace(/\n/g, '<br />')
+                  }}
+                />
               )}
             </div>
           </div>
         ))}
         
-        {isTyping && renderTypingIndicator()}
+        {isLoading && (
+          <div className="flex justify-start mb-4">
+            <div className="bg-gray-700 rounded-lg rounded-tl-none px-4 py-3 text-white">
+              <div className="flex gap-2">
+                <div className="typing-dot"></div>
+                <div className="typing-dot"></div>
+                <div className="typing-dot"></div>
+              </div>
+            </div>
+          </div>
+        )}
         
         <div ref={messagesEndRef} />
       </div>
       
-      {/* Input area */}
-      <form onSubmit={handleSend} className="border-t border-light-100/10 p-4">
-        <div className="flex items-center">
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask for movie recommendations..."
-            className="flex-1 bg-light-100/5 rounded-l-lg py-2 px-4 text-white focus:outline-none"
-            disabled={isTyping}
-          />
-          <button
-            type="submit"
-            className={`bg-indigo-600 text-white rounded-r-lg py-2 px-4 ${
-              isTyping ? 'opacity-50 cursor-not-allowed' : 'hover:bg-indigo-700'
-            }`}
-            disabled={isTyping}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
-            </svg>
-          </button>
-        </div>
+      {/* Input */}
+      <form 
+        onSubmit={handleSendMessage}
+        className="border-t border-gray-700 p-3 flex items-center"
+      >
+        <input
+          ref={inputRef}
+          type="text"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder="Type your mood or movie question..."
+          className="flex-1 bg-gray-700 text-white rounded-l-lg px-4 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          disabled={isLoading}
+        />
+        <button
+          type="submit"
+          className="bg-blue-600 text-white rounded-r-lg px-4 py-2 hover:bg-blue-700 transition-colors disabled:opacity-50"
+          disabled={isLoading || !input.trim()}
+        >
+          <FaPaperPlane />
+        </button>
       </form>
     </div>
   );

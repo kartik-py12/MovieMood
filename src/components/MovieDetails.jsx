@@ -229,7 +229,10 @@ const MovieDetails = () => {
       )}
       
       {/* Add the chatbot for personalized recommendations based on this movie */}
-      <ChatbotContainer isMovieDetail={true} movieTitle={movie.title} />
+      <ChatbotContainer 
+        isMovieDetail={true} 
+        movieTitle={movie.title}
+      />
     </div>
   );
 };

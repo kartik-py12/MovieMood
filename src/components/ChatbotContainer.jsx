@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { FaPaperPlane, FaTimes, FaCommentAlt } from 'react-icons/fa';
 import { getMovieRecommendationsWithHistory, isMovieRelatedQuery } from '../utils/geminiAPI';
 import ChatMessage from './ChatMessage';
+import MarkdownFormatter from './MarkdownFormatter';
 
 const ChatbotContainer = ({ isMovieDetail = false, movieTitle = null }) => {
   const [isVisible, setIsVisible] = useState(false);
@@ -82,10 +83,20 @@ const ChatbotContainer = ({ isMovieDetail = false, movieTitle = null }) => {
       // Skip relevance check for single mood words or if on movie detail page
       const skipRelevanceCheck = isMoodWord || isMovieDetail || conversationContext.length > 0;
       
+      // Enhanced movie context handling
+      const isAboutThisMovie = isMovieDetail && movieTitle && 
+        (userMessage.toLowerCase().includes('this movie') || 
+         userMessage.toLowerCase().includes('the movie') ||
+         userMessage.toLowerCase().includes('similar') ||
+         userMessage.toLowerCase().includes('like it') ||
+         userMessage.toLowerCase().includes('recommend'));
+      
       // If on movie detail page, enhance the query with movie context
-      const enhancedMessage = isMovieDetail && movieTitle && !isMoodWord && conversationContext.length <= 1
-        ? `${userMessage} (related to the movie "${movieTitle}")`
-        : userMessage;
+      const enhancedMessage = isMovieDetail && movieTitle ? 
+        isAboutThisMovie ?
+          `About the movie "${movieTitle}": ${userMessage}` :
+          `${userMessage} (Context: User is viewing the movie "${movieTitle}")` :
+        userMessage;
       
       let isRelated = skipRelevanceCheck ? true : await isMovieRelatedQuery(userMessage);
       
