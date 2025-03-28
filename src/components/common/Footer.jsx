@@ -4,7 +4,7 @@ import { FaGithub, FaLinkedin, FaEnvelope, FaHeart, FaFilm, FaCode, FaUserFriend
 
 const Footer = () => {
   return (
-    <footer className="bg-gradient-to-b from-gray-900 to-dark-100 border-t border-light-100/5 py-16">
+    <footer className="bg-gradient-to-b from-gray-900 to-dark-100 border-t border-light-100/5 py-16 w-full overflow-hidden">
       <div className="container mx-auto px-6">
         {/* Top section with logo and description */}
         <div className="flex flex-col items-center mb-12">

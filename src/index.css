@@ -20,11 +20,15 @@
   --background-image-hero-pattern: url("/hero-bg.png");
 }
 
-@tailwind base;
-@tailwind components;
+
 @tailwind utilities;
 
 @layer base {
+  html, body {
+    @apply overflow-x-hidden;
+    max-width: 100%;
+  }
+
   body {
     font-family: "DM Sans", serif;
     font-optical-sizing: auto;
