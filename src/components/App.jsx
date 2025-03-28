@@ -1,7 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navbar from './Navbar';
-import HomeScreen from './HomeScreen';
+import Home from '../pages/Home';  // Correct import for the Home page
 import MovieDetails from './MovieDetails';
 import MovieSearch from './MovieSearch';
 import PersonDetails from './PersonDetails';
@@ -18,7 +18,7 @@ const App = () => {
         <Navbar />
         <main className="flex-grow relative overflow-x-hidden">
           <Routes>
-            <Route path="/" element={<HomeScreen />} />
+            <Route path="/" element={<Home />} />
             <Route path="/movie/:id" element={<MovieDetails />} />
             <Route path="/search" element={<MovieSearch />} />
             <Route path="/person/:id" element={<PersonDetails />} />
@@ -27,15 +27,13 @@ const App = () => {
             <Route path="*" element={<PageNotFound />} />
           </Routes>
           
-          {/* Only show chatbot on home page and search pages - NOT on movie details page as that has its own */}
+          {/* Only show chatbot on search pages - NOT on home or movie details pages as they have their own */}
           <Routes>
-            <Route path="/" element={<ChatbotContainer />} />
             <Route path="/search" element={<ChatbotContainer />} />
             <Route path="/movies/:category" element={<ChatbotContainer />} />
             <Route path="/genre/:id/:name" element={<ChatbotContainer />} />
           </Routes>
         </main>
-        <Footer />
       </div>
     </Router>
   );

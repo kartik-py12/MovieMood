@@ -55,7 +55,13 @@ export const tmdbApi = {
   getTVGenres: () => fetchFromApi('/api/genres/tv'),
   
   // Discover with filters
-  discoverMovies: (params = {}) => fetchFromApi('/api/discover/movie', params),
+  discoverMovies: (params = {}) => {
+    const paramsWithDefaults = {
+      page: 1,
+      ...params
+    };
+    return fetchFromApi('/api/discover/movie', paramsWithDefaults);
+  },
   discoverTVShows: (params = {}) => fetchFromApi('/api/discover/tv', params),
   
   // Search

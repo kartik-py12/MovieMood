@@ -45,7 +45,8 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
       <button
         onClick={() => onPageChange(currentPage - 1)}
         disabled={currentPage === 1}
-        className="px-3 py-2 rounded-md bg-gray-800 text-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-700"
+        className="px-3 py-2 rounded-md bg-gray-700 text-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-600 transition-colors"
+        aria-label="Previous page"
       >
         <FaChevronLeft />
       </button>
@@ -55,7 +56,7 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
         <>
           <button
             onClick={() => onPageChange(1)}
-            className="px-4 py-2 rounded-md hover:bg-gray-700 text-white"
+            className="px-4 py-2 rounded-md hover:bg-gray-700 text-white transition-colors"
           >
             1
           </button>
@@ -68,7 +69,7 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
         <button
           key={page}
           onClick={() => onPageChange(page)}
-          className={`px-4 py-2 rounded-md ${
+          className={`px-4 py-2 rounded-md transition-colors ${
             currentPage === page
               ? 'bg-blue-600 text-white'
               : 'hover:bg-gray-700 text-white'
@@ -84,7 +85,7 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
           <span className="text-gray-500">...</span>
           <button
             onClick={() => onPageChange(totalPages)}
-            className="px-4 py-2 rounded-md hover:bg-gray-700 text-white"
+            className="px-4 py-2 rounded-md hover:bg-gray-700 text-white transition-colors"
           >
             {totalPages}
           </button>
@@ -95,7 +96,8 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
       <button
         onClick={() => onPageChange(currentPage + 1)}
         disabled={currentPage === totalPages}
-        className="px-3 py-2 rounded-md bg-gray-800 text-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-700"
+        className="px-3 py-2 rounded-md bg-gray-700 text-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-600 transition-colors"
+        aria-label="Next page"
       >
         <FaChevronRight />
       </button>

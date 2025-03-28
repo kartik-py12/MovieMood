@@ -119,7 +119,10 @@ const HomeScreen = () => {
           {popularMovies.length > 0 && (
             <section>
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-2xl font-bold text-white">Popular Movies</h2>
+                <h2 className="text-2xl font-bold text-white">
+                  Popular Movies
+                  {currentPage > 1 && <span className="text-sm font-normal ml-2 text-gray-400">Page {currentPage}</span>}
+                </h2>
                 <Link to="/movies/popular" className="text-blue-400 hover:text-blue-300 transition-colors">View All</Link>
               </div>
               <MovieGrid movies={popularMovies.slice(0, 12)} />
@@ -166,12 +169,15 @@ const HomeScreen = () => {
           
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="flex justify-center mt-8">
-              <Pagination 
-                currentPage={currentPage}
-                totalPages={Math.min(totalPages, 10)} // Limit to 10 pages
-                onPageChange={handlePageChange}
-              />
+            <div className="flex justify-center mt-10 pb-6">
+              <div className="bg-gray-800 rounded-lg p-4 shadow-lg">
+                <h3 className="text-center text-white text-lg mb-3">Browse More Movies</h3>
+                <Pagination 
+                  currentPage={currentPage}
+                  totalPages={Math.min(totalPages, 10)} // Limit to 10 pages
+                  onPageChange={handlePageChange}
+                />
+              </div>
             </div>
           )}
         </div>

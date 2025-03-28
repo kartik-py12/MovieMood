@@ -25,12 +25,16 @@ const Home = () => {
   const [trendingMovies, setTrendingMovies] = useState([]);
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
   const [useDirectApi, setUseDirectApi] = useState(false);
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
 
   useDebounce(() => setdebouncedSearchTerm(searchTerm), 800, [searchTerm])
 
   // Function to fetch data directly from TMDB using API key
-  const fetchFromTMDB = async (endpoint, query = "") => {
-    let url = `${TMDB_BASE_URL}${endpoint}?api_key=${TMDB_API_KEY}`;
+  const fetchFromTMDB = async (endpoint, query = "", page = 1) => {
+    let url = `${TMDB_BASE_URL}${endpoint}?api_key=${TMDB_API_KEY}&page=${page}`;
     if (query) {
       url += `&query=${encodeURIComponent(query)}`;
     }
@@ -45,10 +49,10 @@ const Home = () => {
   };
 
   // Alternative function using Authorization header method
-  const fetchFromTMDBWithToken = async (endpoint, query = "") => {
-    let url = `${TMDB_BASE_URL}${endpoint}`;
+  const fetchFromTMDBWithToken = async (endpoint, query = "", page = 1) => {
+    let url = `${TMDB_BASE_URL}${endpoint}?page=${page}`;
     if (query) {
-      url += `?query=${encodeURIComponent(query)}`;
+      url += `&query=${encodeURIComponent(query)}`;
     }
     
     const options = {
@@ -66,7 +70,7 @@ const Home = () => {
     return await response.json();
   };
 
-  const fetchMovies = async (query = "") => {
+  const fetchMovies = async (query = "", page = 1) => {
     setIsLoading(true);
     setErrorMessage("");
   
@@ -77,29 +81,29 @@ const Home = () => {
         // Use TMDB API directly as fallback
         try {
           if (query) {
-            data = await fetchFromTMDB('/search/movie', query);
+            data = await fetchFromTMDB('/search/movie', query, page);
           } else {
-            data = await fetchFromTMDB('/discover/movie', 'sort_by=popularity.desc');
+            data = await fetchFromTMDB('/discover/movie', 'sort_by=popularity.desc', page);
           }
         } catch (err) {
           console.log("API key method failed, trying token method:", err);
           
           if (query) {
-            data = await fetchFromTMDBWithToken('/search/movie', query);
+            data = await fetchFromTMDBWithToken('/search/movie', query, page);
           } else {
-            data = await fetchFromTMDBWithToken('/discover/movie?sort_by=popularity.desc');
+            data = await fetchFromTMDBWithToken('/discover/movie', '', page);
           }
         }
       } else {
         // Use our backend
-        const endpoint = `${API_BASE_URL}/movies?query=${encodeURIComponent(query)}`;
+        const endpoint = `${API_BASE_URL}/movies?query=${encodeURIComponent(query)}&page=${page}`;
         const response = await fetch(endpoint);
     
         if (!response.ok) {
           console.log("Backend API failed, switching to direct TMDB API");
           setUseDirectApi(true);
           // Retry with direct API
-          return fetchMovies(query);
+          return fetchMovies(query, page);
         }
     
         data = await response.json();
@@ -111,6 +115,7 @@ const Home = () => {
       }
   
       setMovieList(data.results || []);
+      setTotalPages(data.total_pages || 0);
   
       if (query && data.results && data.results.length > 0) {
         await updateSearchCount(query, data.results[0]);
@@ -133,8 +138,8 @@ const Home = () => {
   }
 
   useEffect(() => {
-    fetchMovies(debouncedSearchTerm);
-  }, [debouncedSearchTerm]);
+    fetchMovies(debouncedSearchTerm, currentPage);
+  }, [debouncedSearchTerm, currentPage]);
 
   useEffect(() => {
     loadTrendingMovies()
@@ -142,6 +147,11 @@ const Home = () => {
 
   const toggleChatbot = () => {
     setIsChatbotOpen(!isChatbotOpen);
+  };
+
+  const handlePageChange = (newPage) => {
+    setCurrentPage(newPage);
+    window.scrollTo(0, 0);
   };
 
   return (
@@ -171,7 +181,7 @@ const Home = () => {
         )}
 
         <section className="all-movies">
-          <h2>All Movies</h2>
+          <h2>All Movies {currentPage > 1 && <span className="text-sm font-normal text-gray-400">(Page {currentPage})</span>}</h2>
 
           {isLoading ? (
             <Spinner/>
@@ -184,13 +194,27 @@ const Home = () => {
               ))}
             </ul>
           )}
+          
+          {/* Pagination */}
+          {totalPages > 1 && !isLoading && (
+            <div className="flex justify-center mt-10 pb-6">
+              <div className="bg-gray-800 rounded-lg p-4 shadow-lg">
+                <h3 className="text-center text-white text-lg mb-3">Browse More Movies</h3>
+                <Pagination 
+                  currentPage={currentPage}
+                  totalPages={Math.min(totalPages, 10)} // Limit to 10 pages
+                  onPageChange={handlePageChange}
+                />
+              </div>
+            </div>
+          )}
         </section>
       </div>
       
       <ChatbotButton toggleChatbot={toggleChatbot} />
       {isChatbotOpen && <Chatbot closeChatbot={() => setIsChatbotOpen(false)} />}
-          {/* <Pagination/> */}
-          <Footer/>
+      
+      <Footer/>
     </main>
   )
 }
