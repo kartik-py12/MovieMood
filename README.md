@@ -1,10 +1,12 @@
-# TrendingMovies - Movie Recommendation App
+# MovieMood - AI-Powered Film Recommendation App
 
-![TrendingMovies Banner](/public/hero.png)
+![MovieMood Banner](/public/hero.png)
 
 ## Overview
 
-TrendingMovies is a modern movie recommendation application built with React, Tailwind CSS, and Google's Gemini AI. The app provides a seamless way to discover, explore, and find personalized movie recommendations through an intelligent chatbot interface.
+MovieMood is an intelligent movie discovery platform that understands your emotions and preferences. Combining the vast TMDB movie database with Google's Gemini AI, MovieMood delivers personalized film recommendations through a conversational interface that adapts to your mood, interests, and viewing history.
+
+Whether you're feeling happy, nostalgic, adventurous, or just looking for something new, MovieMood's AI chatbot assistant will suggest perfect movies tailored to your current state of mind. Beyond recommendations, explore trending films, detailed movie information, trailers, and cast details in a clean, modern interface.
 
 ## Features
 
@@ -61,8 +63,8 @@ VITE_APPWRITE_COLLECTION_ID=your_appwrite_collection_id
 
 1. Clone the repository
    ```bash
-   git clone https://github.com/yourusername/trendingmovies.git
-   cd trendingmovies
+   git clone https://github.com/yourusername/moviemood.git
+   cd moviemood
    ```
 
 2. Install dependencies
@@ -139,4 +141,4 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ---
 
-Made with ❤️ by the TrendingMovies team
+Made with ❤️ by the MovieMood team
