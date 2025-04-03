@@ -6,10 +6,9 @@ import Chatbot from "../components/Chatbot";
 
 
 const API_BASE_URL = "https://trendingmoviebackend-1.onrender.com/api";
-// Update with your actual TMDB credentials
-const TMDB_API_KEY = "7337f37bbac265f1941b84dbf6976edc";
-const TMDB_ACCESS_TOKEN = "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI3MzM3ZjM3YmJhYzI2NWYxOTQxYjg0ZGJmNjk3NmVkYyIsIm5iZiI6MTczODE3NTc2NS43NDQsInN1YiI6IjY3OWE3NTE1ZDA0YjAzYmQ5ZjM0M2ZhMSIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.A4XPEm7gW3a3ajC1Wo52gXG-QpdSWXtvcmTrrA2vDkY";
-const TMDB_BASE_URL = "https://api.themoviedb.org/3";
+// Get TMDB credentials from environment variables
+const TMDB_API_KEY = import.meta.env.VITE_TMDB_API_KEY;
+const TMDB_ACCESS_TOKEN = import.meta.env.VITE_TMDB_API_KEY;
 
 const MovieDetails = () => {
   const { id } = useParams();

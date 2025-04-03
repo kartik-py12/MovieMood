@@ -1,5 +1,3 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
 import { FaGithub, FaLinkedin, FaEnvelope, FaHeart, FaFilm, FaCode, FaUserFriends } from 'react-icons/fa';
 
 const Footer = () => {
@@ -34,15 +32,15 @@ const Footer = () => {
             <ul className="space-y-3">
               <li className="text-light-100 hover:text-gradient transition-colors flex items-center justify-center md:justify-start">
                 <span className="inline-block w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
-                Kartik Sharma
+                Kartik Sharma - 12307285
               </li>
               <li className="text-light-100 hover:text-gradient transition-colors flex items-center justify-center md:justify-start">
                 <span className="inline-block w-2 h-2 bg-purple-500 rounded-full mr-2"></span>
-                Ayush
+                Ayush Kumar - 12308893
               </li>
               <li className="text-light-100 hover:text-gradient transition-colors flex items-center justify-center md:justify-start">
                 <span className="inline-block w-2 h-2 bg-pink-500 rounded-full mr-2"></span>
-                Kanha
+                Kanha Mittal - 12300558
               </li>
             </ul>
           </div>

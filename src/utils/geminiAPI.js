@@ -1,8 +1,8 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { getLocalMovieRecommendation } from "./movieRecommendations";
 
-// Initialize the Generative AI API with your updated API key
-const API_KEY = "AIzaSyDl8Yc1ZOwxFGznc2HEGIJDcDkamsOcdo4";
+// Initialize the Generative AI API with your API key from environment variables
+const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 const genAI = new GoogleGenerativeAI(API_KEY);
 
 // Simple in-memory cache

@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useParams} from 'react-router-dom';
 import { tmdbApi } from '../utils/tmdbApi';
 import MovieGrid from './MovieGrid';
 import Loader from './common/Loader';

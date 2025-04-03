@@ -1,3 +1,6 @@
+// NOTE: Possible duplicate with Chatbot.jsx - this component appears to not be used directly in Home.jsx
+// The App.jsx imports it but Home.jsx uses Chatbot.jsx instead - verify usage before deleting
+
 import React, { useState, useRef, useEffect } from 'react';
 import { FaPaperPlane, FaTimes, FaCommentAlt } from 'react-icons/fa';
 import { getMovieRecommendationsWithHistory, isMovieRelatedQuery } from '../utils/geminiAPI';
