@@ -4,8 +4,7 @@ import Search from "../components/Search"
 import Spinner from "../components/Spinner";
 import MovieCard from "../components/MovieCard";
 import { getTrending, updateSearchCount } from "../appwrite";
-import ChatbotButton from "../components/ChatbotButton";
-import Chatbot from "../components/Chatbot";
+import ChatContainer from "../components/ChatContainer";
 import Footer from "../components/common/Footer";
 import Pagination from "../components/common/Pagination";
 import { Link } from "react-router-dom";
@@ -23,7 +22,6 @@ const Home = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [debouncedSearchTerm, setdebouncedSearchTerm] = useState('');
   const [trendingMovies, setTrendingMovies] = useState([]);
-  const [isChatbotOpen, setIsChatbotOpen] = useState(false);
   const [useDirectApi, setUseDirectApi] = useState(false);
   
   // Pagination state
@@ -145,10 +143,6 @@ const Home = () => {
     loadTrendingMovies()
   }, [])
 
-  const toggleChatbot = () => {
-    setIsChatbotOpen(!isChatbotOpen);
-  };
-
   const handlePageChange = (newPage) => {
     setCurrentPage(newPage);
     window.scrollTo(0, 0);
@@ -162,6 +156,18 @@ const Home = () => {
           <img src="/hero.png" alt="hero banner"></img>
           <h1>Find <span className="text-gradient">Movies</span> You'll Love Without the Hassle</h1>
           <Search searchTerm={searchTerm} setSearchTerm={setSearchTerm}/>
+          <div className="mt-4 text-center">
+            <Link 
+              to="/visual-recommender" 
+              className="inline-flex items-center bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4V5h12v10z" clipRule="evenodd" />
+                <path d="M8 7a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1zM8 11a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" />
+              </svg>
+              Visual Movie Recommendations
+            </Link>
+          </div>
         </header>
 
         {trendingMovies.length > 0 && (
@@ -211,8 +217,7 @@ const Home = () => {
         </section>
       </div>
       
-      <ChatbotButton toggleChatbot={toggleChatbot} />
-      {isChatbotOpen && <Chatbot closeChatbot={() => setIsChatbotOpen(false)} />}
+      <ChatContainer />
       
       <Footer/>
     </main>

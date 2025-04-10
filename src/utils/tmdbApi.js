@@ -29,6 +29,37 @@ const fetchFromApi = async (endpoint, params = {}) => {
   }
 };
 
+// Update the search function to better handle anime/movie searches
+export const searchTMDBMovies = async (query, options = {}) => {
+  try {
+    console.log(`Searching for: "${query}"`);
+    
+    // Clean up the query - remove descriptions and extra text
+    query = query.split('-')[0].split(':')[0].trim();
+    
+    // Extract year from query if it includes a year pattern (YYYY)
+    let year = options.year;
+    const yearMatch = query.match(/\(?(\d{4})\)?/);
+    if (yearMatch) {
+      year = yearMatch[1];
+      // Remove year from query to improve matching
+      query = query.replace(/\s*\(?\d{4}\)?\s*/, ' ').trim();
+    }
+
+    const params = { 
+      query, 
+      page: 1,
+      ...(year && { primary_release_year: year }) 
+    };
+    
+    const data = await fetchFromApi('/api/search/movie', params);
+    return data;
+  } catch (error) {
+    console.error(`Error searching for movie "${query}":`, error);
+    return { results: [] };
+  }
+};
+
 // Movie endpoints
 export const tmdbApi = {
   // Movies
@@ -67,6 +98,34 @@ export const tmdbApi = {
   // Search
   searchMulti: (query, page = 1) => fetchFromApi('/api/search/multi', { query, page }),
   searchMovies: (query, page = 1) => fetchFromApi('/api/movies', { query, page }),
+  
+  // Direct search function to find specific movies
+  searchTMDBMovies: async (title, year = null) => {
+    try {
+      // Include year in query if provided to get more accurate results
+      const query = year ? `${title} ${year}` : title;
+      const data = await fetchFromApi('/api/search/movie', { 
+        query, 
+        page: 1,
+        ...(year && { year }) // Add explicit year parameter if available
+      });
+      return data;
+    } catch (error) {
+      console.error(`Error searching for movie "${title}":`, error);
+      return { results: [] };
+    }
+  },
+
+  // Fetch movie details by ID
+  getMovieDetails: async (id) => {
+    try {
+      console.log(`Fetching movie details by ID: ${id}`);
+      return await fetchFromApi(`/api/movies/${id}`);
+    } catch (error) {
+      console.error(`Error fetching movie with ID ${id}:`, error);
+      throw error;
+    }
+  },
 };
 
 export default tmdbApi;

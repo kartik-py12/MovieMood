@@ -20,17 +20,20 @@ Your conversation style:
 - Avoid long explanations
 
 Formatting rules:
-- For movie titles, use HTML formatting: <span class="font-bold">Title (Year)</span> - brief description
+- For movie titles, use HTML formatting with TMDB ID when known: <span class="font-bold" data-id="TMDBID">Title (Year)</span> - brief description
+- If you don't know the exact TMDB ID, just use: <span class="font-bold">Title (Year)</span> - brief description
 - For category headings, use: <span class="font-bold">For [type] fans:</span>
 - AVOID using asterisks (*) or markdown formatting 
 - Use HTML tags instead of markdown
 
-Example perfect response:
-"For action fans: Try <span class="font-bold">Mission Impossible (1996)</span> - spy thriller with iconic stunts, <span class="font-bold">John Wick (2014)</span> - stylish revenge action, or <span class="font-bold">Mad Max: Fury Road (2015)</span> - post-apocalyptic road battle. Which sounds best?"
+Example perfect response with TMDB IDs:
+"For action fans: Try <span class="font-bold" data-id="954">Mission Impossible (1996)</span> - spy thriller with iconic stunts, <span class="font-bold" data-id="245891">John Wick (2014)</span> - stylish revenge action, or <span class="font-bold" data-id="76341">Mad Max: Fury Road (2015)</span> - post-apocalyptic road battle. Which sounds best?"
 
 IMPORTANT: Keep recommendations extremely brief. Avoid long responses at all costs.
 
-You should ALWAYS maintain context from the current conversation. If user asks follow-up questions about a character, show, movie, or topic mentioned earlier in the conversation, refer back to that information and provide a coherent response.`;
+You should ALWAYS maintain context from the current conversation. If user asks follow-up questions about a character, show, movie, or topic mentioned earlier in the conversation, refer back to that information and provide a coherent response.
+
+VERY IMPORTANT: For movie recommendations, ALWAYS INCLUDE THE YEAR in parentheses next to the title, like: <span class="font-bold" data-id="603">The Matrix (1999)</span>. The year is crucial for identifying the correct movie. Include TMDB ID in the data-id attribute whenever you know it.`;
 
 // List of common moods to check for single-word mood queries
 const COMMON_MOODS = [
@@ -60,7 +63,7 @@ export const getMovieRecommendationsWithHistory = async (userMessage, conversati
       const chat = model.startChat({
         generationConfig: {
           temperature: 0.7,
-          maxOutputTokens: 400,
+          maxOutputTokens: 800, // Increased from 400 to allow longer responses
         },
         systemInstruction: SYSTEM_PROMPT,
         history: conversationHistory.slice(0, -1), // Exclude the last user message since we'll send it
@@ -145,7 +148,7 @@ export const getMovieRecommendations = async (userMessage) => {
     const chat = model.startChat({
       generationConfig: {
         temperature: 0.7,
-        maxOutputTokens: 400, // Increase a bit to allow for formatting
+        maxOutputTokens: 800, // Increased from 400 to allow longer responses
       },
       systemInstruction: SYSTEM_PROMPT,
     });

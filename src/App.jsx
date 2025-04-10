@@ -7,6 +7,7 @@ import MovieCard from "./components/MovieCard";
 import { getTrending, updateSearchCount } from "./appwrite";
 import Home from "./pages/Home";
 import MovieDetails from "./pages/MovieDetails";
+import VisualRecommender from "./pages/VisualRecommender";
 
 const API_BASE_URL = "https://trendingmoviebackend-1.onrender.com/api";
 
@@ -142,6 +143,7 @@ const App = () => {
     <Routes>
       <Route path="/" element={<Home />} />
       <Route path="/movie/:id" element={<MovieDetails />} />
+      <Route path="/visual-recommender" element={<VisualRecommender />} />
       <Route path="*" element={
         <div className="min-h-screen flex items-center justify-center text-white">
           Page not found. <a href="/" className="text-indigo-400 ml-2">Go home</a>

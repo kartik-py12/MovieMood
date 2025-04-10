@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { FaPaperPlane, FaTimes } from 'react-icons/fa';
+import { FaPaperPlane, FaTimes, FaFilm } from 'react-icons/fa';
 import { getMovieRecommendationsWithHistory, isMovieRelatedQuery } from '../utils/geminiAPI';
 import { MarkdownFormatter } from './MarkdownFormatter';
 
@@ -131,13 +131,31 @@ const Chatbot = ({ closeChatbot, isMovieDetail = false, movieTitle = null }) => 
     }
   };
 
+  const switchToRecommenderMode = () => {
+    // Call parent component to switch mode
+    if (typeof closeChatbot === 'function') {
+      closeChatbot('recommender');
+    }
+  };
+
   return (
     <div className="fixed bottom-6 right-6 w-[350px] h-[500px] bg-gray-800 rounded-lg shadow-xl flex flex-col z-50 overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between bg-gray-900 px-4 py-3">
-        <h3 className="text-white font-medium">Movie Recommendations</h3>
+        <div className="flex items-center gap-2">
+          <h3 className="text-white font-medium">Movie Recommendations</h3>
+          <div className="flex">
+            <button
+              onClick={switchToRecommenderMode}
+              className="text-gray-400 hover:text-white transition-colors flex items-center text-xs bg-gray-800/50 rounded-full px-2 py-1"
+              title="Switch to visual recommender"
+            >
+              <FaFilm className="mr-1" /> Visual Mode
+            </button>
+          </div>
+        </div>
         <button 
-          onClick={closeChatbot}
+          onClick={() => closeChatbot()}
           className="text-gray-400 hover:text-white transition-colors"
           aria-label="Close chat"
         >
