@@ -9,7 +9,7 @@ import Footer from "../components/common/Footer";
 import Pagination from "../components/common/Pagination";
 import { Link } from "react-router-dom";
 
-const API_BASE_URL = "https://trendingmoviebackend-1.onrender.com/api";
+const API_BASE_URL = "https://trendingmoviebackend-fkde.onrender.com/api";
 // Get TMDB credentials from environment variables
 const TMDB_API_KEY = import.meta.env.VITE_TMDB_API_KEY;
 const TMDB_ACCESS_TOKEN = import.meta.env.VITE_TMDB_API_KEY;
@@ -129,9 +129,11 @@ const Home = () => {
   const loadTrendingMovies = async() => {
     try{
       const movies = await getTrending();
-      setTrendingMovies(movies);
+      // Ensure we always set an array, even if we get undefined or null
+      setTrendingMovies(movies || []);
     }catch(error){
-      console.error(error);
+      console.error("Error loading trending movies:", error);
+      setTrendingMovies([]); // Set empty array on error
     }
   }
 
@@ -156,30 +158,53 @@ const Home = () => {
           <img src="/hero.png" alt="hero banner"></img>
           <h1>Find <span className="text-gradient">Movies</span> You'll Love Without the Hassle</h1>
           <Search searchTerm={searchTerm} setSearchTerm={setSearchTerm}/>
-          <div className="mt-4 text-center">
+          
+          {/* Improved Visual Recommender Button */}
+          <div className="mt-6 mb-2">
             <Link 
               to="/visual-recommender" 
-              className="inline-flex items-center bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+              className="block max-w-md mx-auto overflow-hidden group"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4V5h12v10z" clipRule="evenodd" />
-                <path d="M8 7a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1zM8 11a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" />
-              </svg>
-              Visual Movie Recommendations
+              <div className="relative bg-gradient-to-r from-indigo-900 via-purple-800 to-indigo-900 rounded-xl p-1 shadow-lg transition-all duration-300 hover:shadow-indigo-500/30 hover:shadow-xl group-hover:scale-[1.01]">
+                <div className="bg-gray-900/90 rounded-lg p-4 flex items-center">
+                  <div className="w-12 h-12 flex-shrink-0 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center mr-4 shadow-inner">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-bold text-gradient text-lg">Visual Movie Recommendations</h3>
+                    <p className="text-gray-400 text-sm">Get AI-powered movie suggestions with posters</p>
+                  </div>
+                  <div className="flex-shrink-0 opacity-70 group-hover:opacity-100 transition-opacity">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-indigo-300 group-hover:translate-x-1 transition-transform" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
             </Link>
           </div>
         </header>
 
-        {trendingMovies.length > 0 && (
+        {/* Add null/undefined check with optional chaining */}
+        {trendingMovies?.length > 0 && (
           <section className="trending">
             <h2>Trending Movies</h2>
             <ul>
               {trendingMovies.map((movie, index) => (
-                  <Link to={`/movie/${movie.movie_id}`} key={movie.$id}>
-                <li key={movie.$id}>
-                  <p>{index+1}</p>
-                  <img src={movie.poster_url} alt={movie.title}></img>
-                </li>
+                <Link to={`/movie/${movie?.movie_id}`} key={movie?.$id || `trending-${index}`}>
+                  <li key={movie?.$id || `trending-item-${index}`}>
+                    <p>{index+1}</p>
+                    <img 
+                      src={movie?.poster_url || '/placeholder-poster.png'} 
+                      alt={movie?.title || 'Movie poster'} 
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = '/placeholder-poster.png';
+                      }}
+                    />
+                  </li>
                 </Link>
               ))}
             </ul>

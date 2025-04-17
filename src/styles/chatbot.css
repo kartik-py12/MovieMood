@@ -1,0 +1,57 @@
+/* These styles can be imported in your main.jsx or included in a component */
+
+.chatbot-container {
+  transition: all 0.3s ease;
+  transform-origin: bottom right;
+}
+
+.chatbot-container.entering {
+  transform: scale(0.8);
+  opacity: 0;
+}
+
+.chatbot-container.entered {
+  transform: scale(1);
+  opacity: 1;
+}
+
+.chatbot-container.exiting {
+  transform: scale(0.8);
+  opacity: 0;
+}
+
+.chatbot-container.exited {
+  transform: scale(0.8);
+  opacity: 0;
+}
+
+.typing-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #e2e8f0;
+  animation: typing 1.4s infinite both;
+}
+
+.typing-dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.typing-dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes typing {
+  0%, 100% { opacity: 0.3; transform: translateY(0); }
+  50% { opacity: 1; transform: translateY(-4px); }
+}
+
+.markdown-content a {
+  color: #8b5cf6;
+  text-decoration: underline;
+  transition: color 0.2s;
+}
+
+.markdown-content a:hover {
+  color: #a78bfa;
+}

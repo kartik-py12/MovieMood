@@ -1,6 +1,6 @@
 // TMDB API client that connects to our proxy server
 
-const BASE_URL = "https://trendingmoviebackend-1.onrender.com";
+const BASE_URL = "https://trendingmoviebackend-fkde.onrender.com";
 
 // Helper function for API requests
 const fetchFromApi = async (endpoint, params = {}) => {

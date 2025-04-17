@@ -23,6 +23,7 @@ const VisualRecommender = () => {
     'Animated movies for adults',
     'Foreign language masterpieces'
   ]);
+  const [showSuggestions, setShowSuggestions] = useState(true); // Track whether to show suggestions
   
   const inputRef = useRef(null);
   const resultsRef = useRef(null);
@@ -31,7 +32,7 @@ const VisualRecommender = () => {
     inputRef.current?.focus();
   }, []);
 
-  const API_BASE_URL = "https://trendingmoviebackend-1.onrender.com/api";
+  const API_BASE_URL = "https://trendingmoviebackend-fkde.onrender.com/api";
   // Get TMDB credentials from environment variables
   const TMDB_API_KEY = import.meta.env.VITE_TMDB_API_KEY;
   const TMDB_ACCESS_TOKEN = import.meta.env.VITE_TMDB_API_KEY;
@@ -59,6 +60,7 @@ const VisualRecommender = () => {
       return newHistory;
     });
     
+    // Start loading immediately
     setIsLoading(true);
     setMovieResults([]);
     
@@ -220,12 +222,21 @@ const VisualRecommender = () => {
     } finally {
       setIsLoading(false);
       setIsSearching(false);
+      // Keep suggestions hidden when we have results, unless explicitly toggled on
+      if (movieResults.length > 0) {
+        setShowSuggestions(false);
+      }
     }
   };
   
   const handlePromptClick = (prompt) => {
     setQuery(prompt);
     inputRef.current?.focus();
+  };
+
+  // Toggle suggestions visibility
+  const toggleSuggestions = () => {
+    setShowSuggestions(!showSuggestions);
   };
 
   return (
@@ -269,9 +280,34 @@ const VisualRecommender = () => {
             </form>
           </div>
           
-          {/* Quick suggestions */}
-          {!isLoading && movieResults.length === 0 && (
-            <div className="max-w-3xl mx-auto">
+          {/* Quick suggestions with toggle button when results are showing */}
+          {(showSuggestions || movieResults.length === 0) && !isLoading && (
+            <div className="max-w-3xl mx-auto mb-6">
+              {movieResults.length > 0 && (
+                <div className="flex justify-center mb-4">
+                  <button 
+                    onClick={toggleSuggestions}
+                    className="bg-gray-800/80 hover:bg-gray-700 text-gray-300 text-sm px-4 py-2 rounded-full flex items-center"
+                  >
+                    {showSuggestions ? (
+                      <>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                        Hide Suggestions
+                      </>
+                    ) : (
+                      <>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                        </svg>
+                        Show Suggestions
+                      </>
+                    )}
+                  </button>
+                </div>
+              )}
+              
               <h2 className="font-medium text-light-100 text-center mb-3 flex items-center justify-center gap-2">
                 <FaFire className="text-orange-500" />
                 <span>Popular searches</span>
@@ -307,20 +343,36 @@ const VisualRecommender = () => {
               )}
             </div>
           )}
+
+          {/* Toggle button when suggestions are hidden and results are showing */}
+          {!showSuggestions && movieResults.length > 0 && !isLoading && (
+            <div className="flex justify-center mb-8">
+              <button 
+                onClick={toggleSuggestions}
+                className="bg-gray-800/60 hover:bg-gray-700/80 text-gray-300 text-sm px-4 py-2 rounded-full flex items-center"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                </svg>
+                Show Search Suggestions
+              </button>
+            </div>
+          )}
         </div>
       </div>
       
-      {/* Remove the AI Response section entirely */}
-      
-      {/* Movie Results */}
-      {isSearching && (
+      {/* Movie Results - Show Loading state here */}
+      {(isLoading || isSearching) && (
         <div className="container mx-auto px-4 py-12 text-center">
-          <Spinner />
-          <p className="mt-4 text-light-200">Finding perfect movie matches for you...</p>
+          <Spinner size="lg" />
+          <p className="mt-4 text-light-200">
+            {isLoading ? "Finding the perfect movies for you..." : "Loading movie posters..."}
+          </p>
         </div>
       )}
       
-      {movieResults.length > 0 && (
+      {/* Movie Results - Only show when not loading */}
+      {!isLoading && !isSearching && movieResults.length > 0 && (
         <div className="container mx-auto px-4 py-12" ref={resultsRef}>
           <h2 className="text-2xl font-bold mb-3 text-center">
             AI-Powered Recommendations

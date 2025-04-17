@@ -75,7 +75,7 @@ const Footer = () => {
             </h3>
             <div className="flex justify-center md:justify-end space-x-5">
               <a 
-                href="https://github.com/" 
+                href="https://github.com/kartik-py12/MovieMood" 
                 target="_blank"
                 rel="noopener noreferrer"
                 className="bg-gray-800 p-3 rounded-full text-light-200 hover:text-white hover:bg-gray-700 transition-all transform hover:scale-110"
@@ -84,7 +84,7 @@ const Footer = () => {
                 <FaGithub size={20} />
               </a>
               <a 
-                href="https://linkedin.com/" 
+                href="https://www.linkedin.com/in/kartik-py/" 
                 target="_blank"
                 rel="noopener noreferrer"
                 className="bg-gray-800 p-3 rounded-full text-light-200 hover:text-white hover:bg-gray-700 transition-all transform hover:scale-110"
@@ -93,7 +93,7 @@ const Footer = () => {
                 <FaLinkedin size={20} />
               </a>
               <a 
-                href="mailto:contact@trendingmovies.com" 
+                href="mailto:kartikevergreen4@gmail.com" 
                 className="bg-gray-800 p-3 rounded-full text-light-200 hover:text-white hover:bg-gray-700 transition-all transform hover:scale-110"
                 aria-label="Email"
               >
