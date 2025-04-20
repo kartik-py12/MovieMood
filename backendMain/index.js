@@ -8,6 +8,8 @@ const cookieParser = require('cookie-parser');
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const movieRoutes = require('./routes/movieRoutes');
+// Import mood routes - use the correct path based on your project structure
+const moodRoutes = require('./routes/moodRoutes');
 
 const app = express();
 
@@ -28,6 +30,8 @@ mongoose.connect('mongodb+srv://zoro:zoro@cluster0.cd5q8yz.mongodb.net/movieApp?
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/movies', movieRoutes);
+// Mount mood routes at the /api/users path since that's what your frontend expects
+app.use('/api/users', moodRoutes);
 
 // Health check route
 app.get('/api/health', (req, res) => {

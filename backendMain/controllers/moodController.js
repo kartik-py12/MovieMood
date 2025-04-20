@@ -1,85 +1,30 @@
-const express = require('express');
 const User = require('../models/User');
-const { isAuthenticated } = require('../middleware/auth');
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
-const router = express.Router();
-
-// Initialize Gemini AI
+// Initialize Gemini API with your API key
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "YOUR_API_KEY");
 
-// Predefined mood categories
+// Predefined mood categories for movie taste
 const moodCategories = [
-  'Action-oriented', 'Romantic', 'Adventurous', 
-  'Dramatic', 'Comedic', 'Thrilling',
-  'Intellectual', 'Inspirational', 'Dark', 'Nostalgic'
+  'Action-oriented',
+  'Romantic',
+  'Adventurous',
+  'Dramatic',
+  'Comedic',
+  'Thrilling',
+  'Intellectual',
+  'Inspirational',
+  'Dark',
+  'Nostalgic'
 ];
 
-// Protect all routes
-router.use(isAuthenticated);
-
-// Get user's liked movies
-router.get('/liked', async (req, res, next) => {
+/**
+ * Analyze user's mood based on liked movies
+ */
+exports.analyzeMood = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id);
-    res.status(200).json({
-      status: 'success',
-      data: user.likedMovies
-    });
-  } catch (error) {
-    next(error);
-  }
-});
-
-// Get user's watchlist
-router.get('/watchlist', async (req, res, next) => {
-  try {
-    const user = await User.findById(req.user.id);
-    res.status(200).json({
-      status: 'success',
-      data: user.watchlist
-    });
-  } catch (error) {
-    next(error);
-  }
-});
-
-// Get user's watched movies
-router.get('/watched', async (req, res, next) => {
-  try {
-    const user = await User.findById(req.user.id);
-    res.status(200).json({
-      status: 'success',
-      data: user.watched
-    });
-  } catch (error) {
-    next(error);
-  }
-});
-
-// Add new routes for mood analysis
-
-// Get user's mood analysis
-router.get('/moods', async (req, res, next) => {
-  try {
-    const user = await User.findById(req.user.id);
-    res.status(200).json({
-      status: 'success',
-      moods: user.moods || []
-    });
-  } catch (error) {
-    console.error('Error fetching user moods:', error);
-    res.status(500).json({
-      status: 'error',
-      message: 'Failed to fetch user moods'
-    });
-  }
-});
-
-// Analyze user's mood based on liked movies
-router.post('/mood-analysis', async (req, res, next) => {
-  try {
-    const userId = req.user.id;
+    // Get user ID and liked movies from request
+    const userId = req.user._id;
     const { likedMovies } = req.body;
     
     if (!likedMovies || likedMovies.length === 0) {
@@ -92,7 +37,8 @@ router.post('/mood-analysis', async (req, res, next) => {
     // Prepare movie data for analysis
     const movieData = likedMovies.map(movie => ({
       title: movie.title,
-      id: movie.movieId
+      id: movie.movieId,
+      media_type: movie.media_type || 'movie'
     }));
     
     // Call Gemini API to analyze mood based on movies
@@ -101,7 +47,7 @@ router.post('/mood-analysis', async (req, res, next) => {
       moods = await analyzeMovieMoodsWithGemini(movieData);
     } catch (aiError) {
       console.error('AI analysis failed, using fallback:', aiError);
-      moods = generateFallbackMoods();
+      moods = generateFallbackMoods(movieData);
     }
     
     if (!moods || moods.length === 0) {
@@ -125,9 +71,39 @@ router.post('/mood-analysis', async (req, res, next) => {
       message: 'Failed to analyze user mood'
     });
   }
-});
+};
 
-// Helper function to analyze moods with Gemini AI
+/**
+ * Get the mood analysis for the current user
+ */
+exports.getUserMoods = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'User not found'
+      });
+    }
+    
+    return res.status(200).json({
+      status: 'success',
+      moods: user.moods || []
+    });
+  } catch (error) {
+    console.error('Error fetching user moods:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'Failed to fetch user moods'
+    });
+  }
+};
+
+/**
+ * Generate movie mood analysis using Gemini API
+ */
 async function analyzeMovieMoodsWithGemini(movies) {
   try {
     // Get the Gemini Pro model
@@ -159,7 +135,7 @@ async function analyzeMovieMoodsWithGemini(movies) {
     const jsonMatch = text.match(/\[\s*\{.*?\}\s*\]/s);
     if (!jsonMatch) {
       console.error('Failed to extract JSON from Gemini response');
-      return generateFallbackMoods();
+      return generateFallbackMoods(movies);
     }
     
     try {
@@ -175,16 +151,18 @@ async function analyzeMovieMoodsWithGemini(movies) {
         .slice(0, 5); // Return top 5 moods
     } catch (parseError) {
       console.error('Error parsing Gemini response:', parseError);
-      return generateFallbackMoods();
+      return generateFallbackMoods(movies);
     }
   } catch (error) {
     console.error('Error calling Gemini API:', error);
-    return generateFallbackMoods();
+    return generateFallbackMoods(movies);
   }
 }
 
-// Generate fallback moods if AI analysis fails
-function generateFallbackMoods() {
+/**
+ * Generate fallback moods if Gemini API fails
+ */
+function generateFallbackMoods(movies) {
   // Simple fallback algorithm based on random selection
   const selectedMoods = [];
   const moodsCopy = [...moodCategories];
@@ -202,7 +180,7 @@ function generateFallbackMoods() {
   let remainingPercentage = 100;
   for (let i = 0; i < selectedCategories.length; i++) {
     const isLast = i === selectedCategories.length - 1;
-    const score = isLast ? remainingPercentage : Math.floor(Math.random() * (remainingPercentage * 0.6) + 5);
+    const score = isLast ? remainingPercentage : Math.floor(Math.random() * remainingPercentage * 0.6) + 5;
     
     selectedMoods.push({
       name: selectedCategories[i],
@@ -213,8 +191,7 @@ function generateFallbackMoods() {
   }
   
   // Sort by score descending
-  console.log(selectedMoods);
   return selectedMoods.sort((a, b) => b.score - a.score);
 }
 
-module.exports = router;
+module.exports.moodCategories = moodCategories;

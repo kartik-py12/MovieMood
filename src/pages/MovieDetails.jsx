@@ -3,7 +3,10 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import Spinner from '../components/Spinner';
 import ChatbotButton from "../components/ChatbotButton";
 import Chatbot from "../components/Chatbot";
-
+import { useAuth } from '../context/AuthContext';
+import AuthModal from '../components/auth/AuthModal';
+import MovieActions from '../components/movie/MovieActions';
+import { FaUser, FaHeart, FaBookmark, FaCheck, FaInfoCircle } from 'react-icons/fa';
 
 const API_BASE_URL = "https://trendingmoviebackend-fkde.onrender.com/api";
 // Get TMDB credentials from environment variables
@@ -21,7 +24,7 @@ const MovieDetails = () => {
   const [retryCount, setRetryCount] = useState(0);
   const [useFallbackApi, setUseFallbackApi] = useState(false);
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
-
+  const { currentUser } = useAuth();
 
   // Function to fetch data directly from TMDB as a fallback
   const fetchFromTMDB = async (endpoint) => {
@@ -145,6 +148,15 @@ const MovieDetails = () => {
     navigate('/');
   };
 
+  const navigateToAuth = () => {
+    // We can pass the current location as state to redirect back after login
+    navigate('/auth', { state: { from: `/movie/${id}` } });
+  };
+
+  const toggleChatbot = () => {
+    setIsChatbotOpen(!isChatbotOpen);
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -185,11 +197,6 @@ const MovieDetails = () => {
     ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
     : '/no-movie.png';
 
-    const toggleChatbot = () => {
-        setIsChatbotOpen(!isChatbotOpen);
-      };
-    
-
   return (
     <main>
       {backdropUrl && (
@@ -202,12 +209,32 @@ const MovieDetails = () => {
       <div className="pattern" />
       
       <div className="wrapper">
-        <Link to="/" className="inline-flex items-center text-indigo-400 hover:text-indigo-300 mb-6">
-          <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-          </svg>
-          Back to Home
-        </Link>
+        {/* Header section with Auth button */}
+        <div className="flex justify-between items-center mb-6">
+          <Link to="/" className="inline-flex items-center text-indigo-400 hover:text-indigo-300">
+            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            Back to Home
+          </Link>
+          
+          {currentUser ? (
+            <Link to="/profile" className="flex items-center gap-2 bg-indigo-700/50 hover:bg-indigo-700/70 text-white px-4 py-2 rounded-full transition-colors">
+              <div className="w-6 h-6 rounded-full bg-indigo-500 flex items-center justify-center text-sm font-bold">
+                {currentUser.username.charAt(0).toUpperCase()}
+              </div>
+              <span>{currentUser.username}</span>
+            </Link>
+          ) : (
+            <button 
+              onClick={navigateToAuth}
+              className="flex items-center gap-2 bg-indigo-700/50 hover:bg-indigo-700/70 text-white px-4 py-2 rounded-full transition-colors"
+            >
+              <FaUser />
+              <span>Sign In</span>
+            </button>
+          )}
+        </div>
         
         <div className="flex flex-col md:flex-row gap-8 relative z-10">
           <div className="md:w-1/3">
@@ -216,6 +243,39 @@ const MovieDetails = () => {
               alt={movie.title} 
               className="w-full h-auto rounded-lg shadow-[0_0_30px_12px_rgba(171,139,255,0.3)]"
             />
+            
+            {/* Movie Actions or Sign-in Message */}
+            <div className="mt-4">
+              {currentUser ? (
+                <div className="flex justify-center">
+                  <MovieActions movie={movie} />
+                </div>
+              ) : (
+                <div className="px-4 py-3 bg-indigo-900/30 border border-indigo-500/20 rounded-lg text-center mt-12">
+                  <div className="flex items-center justify-center mb-2 text-indigo-400">
+                    <FaInfoCircle className="mr-2" />
+                    <span className="font-medium">Unlock Movie Features</span>
+                  </div>
+                  <p className="text-gray-300 text-sm mb-3">
+                    Sign in to track this movie, add it to your watchlist, mark as watched, or like it
+                  </p>
+                  <div className="flex justify-center gap-4 text-xs text-gray-400">
+                    <div className="flex flex-col items-center">
+                      <FaHeart className="text-red-500/70 mb-1" />
+                      <span>Like</span>
+                    </div>
+                    <div className="flex flex-col items-center">
+                      <FaBookmark className="text-indigo-500/70 mb-1" />
+                      <span>Watchlist</span>
+                    </div>
+                    <div className="flex flex-col items-center">
+                      <FaCheck className="text-green-500/70 mb-1" />
+                      <span>Watched</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
           
           <div className="md:w-2/3 text-white">
@@ -284,9 +344,8 @@ const MovieDetails = () => {
           </div>
         </div>
       </div>
-        <ChatbotButton toggleChatbot={toggleChatbot} />
-            {isChatbotOpen && <Chatbot closeChatbot={() => setIsChatbotOpen(false)} />}
-        
+      <ChatbotButton toggleChatbot={toggleChatbot} />
+      {isChatbotOpen && <Chatbot closeChatbot={() => setIsChatbotOpen(false)} />}
     </main>
   );
 };

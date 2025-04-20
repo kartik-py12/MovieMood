@@ -8,6 +8,10 @@ import ChatContainer from "../components/ChatContainer";
 import Footer from "../components/common/Footer";
 import Pagination from "../components/common/Pagination";
 import { Link } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import { FaUser } from "react-icons/fa";
+import AuthModal from "../components/auth/AuthModal";
+import { FaHeart, FaBookmark, FaCheck } from 'react-icons/fa';
 
 const API_BASE_URL = "https://trendingmoviebackend-fkde.onrender.com/api";
 // Get TMDB credentials from environment variables
@@ -23,6 +27,8 @@ const Home = () => {
   const [debouncedSearchTerm, setdebouncedSearchTerm] = useState('');
   const [trendingMovies, setTrendingMovies] = useState([]);
   const [useDirectApi, setUseDirectApi] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const { currentUser } = useAuth();
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -70,6 +76,7 @@ const Home = () => {
 
   const fetchMovies = async (query = "", page = 1) => {
     setIsLoading(true);
+    // Don't set error message visible to users
     setErrorMessage("");
   
     try {
@@ -95,16 +102,23 @@ const Home = () => {
       } else {
         // Use our backend
         const endpoint = `${API_BASE_URL}/movies?query=${encodeURIComponent(query)}&page=${page}`;
-        const response = await fetch(endpoint);
-    
-        if (!response.ok) {
-          console.log("Backend API failed, switching to direct TMDB API");
+        try {
+          const response = await fetch(endpoint);
+      
+          if (!response.ok) {
+            console.log("Backend API failed, switching to direct TMDB API");
+            setUseDirectApi(true);
+            // Retry with direct API
+            return fetchMovies(query, page);
+          }
+      
+          data = await response.json();
+        } catch (error) {
+          // If backend fails, silently fall back to direct API
+          console.error("Error with backend API:", error);
           setUseDirectApi(true);
-          // Retry with direct API
           return fetchMovies(query, page);
         }
-    
-        data = await response.json();
       }
       
       if (data.Response === "False") {
@@ -116,11 +130,18 @@ const Home = () => {
       setTotalPages(data.total_pages || 0);
   
       if (query && data.results && data.results.length > 0) {
-        await updateSearchCount(query, data.results[0]);
+        try {
+          await updateSearchCount(query, data.results[0]);
+        } catch (error) {
+          // Silently log search count update errors
+          console.error("Error updating search count:", error);
+        }
       }
     } catch (error) {
+      // Only log to console, don't show to user
       console.error(`Error fetching movies: ${error}`);
-      setErrorMessage("Failed to fetch movies. Please try again.");
+      // Set empty movies array instead of error message
+      setMovieList([]);
     } finally {
       setIsLoading(false);
     }
@@ -150,11 +171,35 @@ const Home = () => {
     window.scrollTo(0, 0);
   };
 
+  const toggleAuthModal = () => {
+    setShowAuthModal(!showAuthModal);
+  };
+
   return (
     <main>
       <div className="pattern"/>
       <div className="wrapper">
         <header>
+          {/* Add auth button in the top right corner */}
+          <div className="flex justify-end mb-4">
+            {currentUser ? (
+              <Link to="/profile" className="flex items-center gap-2 bg-indigo-700/50 hover:bg-indigo-700/70 text-white px-4 py-2 rounded-full transition-colors">
+                <div className="w-6 h-6 rounded-full bg-indigo-500 flex items-center justify-center text-sm font-bold">
+                  {currentUser.username.charAt(0).toUpperCase()}
+                </div>
+                <span>{currentUser.username}</span>
+              </Link>
+            ) : (
+              <button 
+                onClick={toggleAuthModal}
+                className="flex items-center gap-2 bg-indigo-700/50 hover:bg-indigo-700/70 text-white px-4 py-2 rounded-full transition-colors"
+              >
+                <FaUser />
+                <span>Sign In</span>
+              </button>
+            )}
+          </div>
+          
           <img src="/hero.png" alt="hero banner"></img>
           <h1>Find <span className="text-gradient">Movies</span> You'll Love Without the Hassle</h1>
           <Search searchTerm={searchTerm} setSearchTerm={setSearchTerm}/>
@@ -187,6 +232,46 @@ const Home = () => {
           </div>
         </header>
 
+        {/* Refined minimalist banner for non-authenticated users */}
+        {!currentUser && (
+          <div className="mb-6 px-4 mt-6">
+            <div className="bg-gradient-to-r from-indigo-900/30 to-purple-900/30 backdrop-blur-sm rounded-2xl overflow-hidden shadow-lg border border-indigo-500/20">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-inner">
+                    <FaUser className="text-white text-sm" />
+                  </div>
+                  <span className="text-white font-medium">Enhance your movie experience</span>
+                </div>
+                
+                <div className="flex flex-wrap justify-center gap-2">
+                  <div className="flex items-center rounded-full px-3 py-1 bg-gradient-to-r from-red-500/20 to-red-600/10 border border-red-500/30">
+                    <FaHeart className="text-red-400 mr-1.5 text-xs" />
+                    <span className="text-gray-200 text-xs">Like</span>
+                  </div>
+                  <div className="flex items-center rounded-full px-3 py-1 bg-gradient-to-r from-indigo-500/20 to-indigo-600/10 border border-indigo-500/30">
+                    <FaBookmark className="text-indigo-400 mr-1.5 text-xs" />
+                    <span className="text-gray-200 text-xs">Watchlist</span>
+                  </div>
+                  <div className="flex items-center rounded-full px-3 py-1 bg-gradient-to-r from-green-500/20 to-green-600/10 border border-green-500/30">
+                    <FaCheck className="text-green-400 mr-1.5 text-xs" />
+                    <span className="text-gray-200 text-xs">Watched</span>
+                  </div>
+                </div>
+                
+                <button 
+                onClick={toggleAuthModal}
+                className="flex items-center gap-2 bg-indigo-700/50 hover:bg-indigo-700/70 text-white px-4 py-2 rounded-full transition-colors"
+              >
+                <FaUser />
+                <span>Sign In</span>
+              </button>
+            
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Add null/undefined check with optional chaining */}
         {trendingMovies?.length > 0 && (
           <section className="trending">
@@ -216,8 +301,11 @@ const Home = () => {
 
           {isLoading ? (
             <Spinner/>
-          ) : errorMessage ? (
-            <p className="text-red-500">{errorMessage}</p>
+          ) : movieList.length === 0 ? (
+            // Show a more generic message or no results message instead of error
+            <div className="text-center py-8">
+              <p className="text-gray-400">No movies found. Try a different search term.</p>
+            </div>
           ) : (
             <ul>
               {movieList.map((movie) => (
@@ -245,6 +333,9 @@ const Home = () => {
       <ChatContainer />
       
       <Footer/>
+      
+      {/* Auth Modal */}
+      <AuthModal isOpen={showAuthModal} onClose={toggleAuthModal} />
     </main>
   )
 }

@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react"; // Make sure React is explicitly imported
 import { useDebounce } from "react-use";
-import { Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
 import Search from "./components/search";
 import Spinner from "./components/Spinner";
 import MovieCard from "./components/MovieCard";
@@ -8,6 +9,10 @@ import { getTrending, updateSearchCount } from "./appwrite";
 import Home from "./pages/Home";
 import MovieDetails from "./pages/MovieDetails";
 import VisualRecommender from "./pages/VisualRecommender";
+import Profile from './pages/Profile';
+import { AuthProvider } from './context/AuthContext';
+import { toast } from 'react-hot-toast';
+import AuthPage from './pages/AuthPage';
 
 const API_BASE_URL = "https://trendingmoviebackend-1.onrender.com/api";
 
@@ -140,16 +145,38 @@ const App = () => {
   }
 
   return (
-    <Routes>
-      <Route path="/" element={<Home />} />
-      <Route path="/movie/:id" element={<MovieDetails />} />
-      <Route path="/visual-recommender" element={<VisualRecommender />} />
-      <Route path="*" element={
-        <div className="min-h-screen flex items-center justify-center text-white">
-          Page not found. <a href="/" className="text-indigo-400 ml-2">Go home</a>
-        </div>
-      } />
-    </Routes>
+    <AuthProvider>
+      {/* <Router> */}
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/movie/:id" element={<MovieDetails />} />
+          <Route path="/visual-recommender" element={<VisualRecommender />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/auth" element={<AuthPage />} />
+        </Routes>
+        <Toaster
+          position="bottom-right"
+          toastOptions={{
+            style: {
+              background: '#333',
+              color: '#fff',
+            },
+            success: {
+              iconTheme: {
+                primary: '#10B981',
+                secondary: 'white',
+              },
+            },
+            error: {
+              iconTheme: {
+                primary: '#EF4444',
+                secondary: 'white',
+              },
+            },
+          }}
+        />
+      {/* </Router> */}
+    </AuthProvider>
   );
 };
 

@@ -1,16 +1,18 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { FaStar } from 'react-icons/fa';
+import { useAuth } from '../context/AuthContext';
 
 const MovieCard = ({ movie }) => {
   const { id, title, poster_path, vote_average, release_date } = movie;
-  
+  const { currentUser } = useAuth();
+
   const formatDate = (dateString) => {
     if (!dateString) return '';
     const date = new Date(dateString);
     return date.getFullYear();
   };
-  
+
   // Placeholder for when there's no poster
   const posterPlaceholder = 'https://via.placeholder.com/500x750?text=No+Poster+Available';
   
@@ -36,6 +38,8 @@ const MovieCard = ({ movie }) => {
           <div className="text-gray-400 text-sm mt-auto">{formatDate(release_date)}</div>
         )}
       </div>
+      
+      {/* We remove the MovieActions and sign-in button, and display nothing here for a cleaner UI */}
     </Link>
   );
 };
