@@ -22,7 +22,7 @@ app.use(express.json());
 app.use(cookieParser());
 
 // Database connection
-mongoose.connect('mongodb+srv://zoro:zoro@cluster0.cd5q8yz.mongodb.net/movieApp?retryWrites=true&w=majority&appName=Cluster0')
+mongoose.connect('proccess.env.mongouri') // your mongo uri
   .then(() => console.log('Connected to MongoDB'))
   .catch(err => console.error('Could not connect to MongoDB', err));
 
