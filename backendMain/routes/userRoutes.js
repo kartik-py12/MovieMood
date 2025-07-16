@@ -4,6 +4,16 @@ import { isAuthenticated } from '../middleware/auth.js';
 
 const router = express.Router();
 
+// Initialize Gemini AI
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "YOUR_API_KEY");
+
+// Predefined mood categories
+const moodCategories = [
+  'Action-oriented', 'Romantic', 'Adventurous', 
+  'Dramatic', 'Comedic', 'Thrilling',
+  'Intellectual', 'Inspirational', 'Dark', 'Nostalgic'
+];
+
 // Protect all routes
 router.use(isAuthenticated);
 

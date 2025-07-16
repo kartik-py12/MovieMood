@@ -55,6 +55,12 @@ const userSchema = new mongoose.Schema({
       rating: { type: Number, min: 0, max: 10, default: 0 }
     }
   ],
+  moods: [
+    {
+      name: String,
+      score: Number
+    }
+  ],
   createdAt: {
     type: Date,
     default: Date.now

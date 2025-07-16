@@ -14,7 +14,6 @@ const Profile = () => {
     watched: []
   });
   const [isLoading, setIsLoading] = useState(false);
-
   useEffect(() => {
     const fetchUserLists = async () => {
       if (currentUser) {
