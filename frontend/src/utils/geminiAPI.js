@@ -9,6 +9,9 @@ const genAI = new GoogleGenerativeAI(API_KEY);
 const responseCache = new Map();
 const CACHE_EXPIRY = 1000 * 60 * 30; // 30 minutes
 
+// Global conversation history
+let conversationHistory = [];
+
 // Define a system prompt to guide the model's behavior
 const SYSTEM_PROMPT = `You are MovieMood, a friendly movie recommendation chatbot.
 
@@ -42,9 +45,16 @@ const COMMON_MOODS = [
   'nostalgic', 'adventurous', 'tense', 'curious'
 ];
 
-// New function to get movie recommendations with conversation history
-export const getMovieRecommendationsWithHistory = async (userMessage, conversationHistory = []) => {
+// Main function to get movie recommendations with conversation history
+export const getMovieRecommendationsWithHistory = async (userMessage) => {
   try {
+    // First, check cache for an identical or very similar query
+    const cachedResponse = checkCache(userMessage);
+    if (cachedResponse) {
+      console.log("Using cached response");
+      return { text: cachedResponse, source: "cache" };
+    }
+
     // Check if it's a single-word mood query
     const normalizedMsg = userMessage.toLowerCase().trim();
     const isSingleMoodQuery = COMMON_MOODS.includes(normalizedMsg);
@@ -63,20 +73,47 @@ export const getMovieRecommendationsWithHistory = async (userMessage, conversati
       const chat = model.startChat({
         generationConfig: {
           temperature: 0.7,
-          maxOutputTokens: 800, // Increased from 400 to allow longer responses
+          maxOutputTokens: 800,
         },
         systemInstruction: SYSTEM_PROMPT,
         history: conversationHistory.slice(0, -1), // Exclude the last user message since we'll send it
       });
       
       const result = await chat.sendMessage(enhancedMessage);
-      return { text: result.response.text(), source: "api" };
+      const response = result.response.text();
+      
+      // Cache this response
+      cacheResponse(userMessage, response);
+      
+      return { text: response, source: "api" };
     } else {
-      // If no history, use the original approach
-      return getMovieRecommendations(enhancedMessage);
+      // If no history, create a new chat session without history
+      const chat = model.startChat({
+        generationConfig: {
+          temperature: 0.7,
+          maxOutputTokens: 800,
+        },
+        systemInstruction: SYSTEM_PROMPT,
+      });
+      
+      // Check if this is likely the first interaction
+      const isFirstMessage = isGreetingOrShortQuery(enhancedMessage) && !isSingleMoodQuery;
+      
+      // If it's the first message or a greeting, append instructions to ask about mood
+      const promptToSend = isFirstMessage 
+        ? `${enhancedMessage}\n\n[Remember to greet the user warmly and ask about their mood or what they feel like watching today]`
+        : enhancedMessage;
+      
+      const result = await chat.sendMessage(promptToSend);
+      const response = result.response.text();
+      
+      // Cache this response
+      cacheResponse(userMessage, response);
+      
+      return { text: response, source: "api" };
     }
   } catch (error) {
-    console.error("Error with Gemini API (with history):", error);
+    console.error("Error with Gemini API:", error);
     
     // Check if it's a rate limit error (429)
     const isRateLimit = error.message && (
@@ -102,85 +139,6 @@ export const getMovieRecommendationsWithHistory = async (userMessage, conversati
           userMessage, 
           true,
           context
-        ), 
-        source: "fallback"
-      };
-    }
-    
-    return { 
-      text: "Hi there! I'm having a little trouble right now. Can you tell me what kind of movie you're in the mood for?", 
-      source: "error" 
-    };
-  }
-};
-
-// Original function to get movie recommendations from Gemini with fallback
-export const getMovieRecommendations = async (userMessage) => {
-  try {
-    // First, check cache for an identical or very similar query
-    const cachedResponse = checkCache(userMessage);
-    if (cachedResponse) {
-      console.log("Using cached response");
-      return { text: cachedResponse, source: "cache" };
-    }
-    
-    // Check if it's a single-word mood query
-    const normalizedMsg = userMessage.toLowerCase().trim();
-    const isSingleMoodQuery = COMMON_MOODS.includes(normalizedMsg);
-    
-    // Enhanced message for single mood queries
-    const enhancedMessage = isSingleMoodQuery
-      ? `I'm feeling ${normalizedMsg} today. What movies would you recommend?`
-      : userMessage;
-    
-    // Initialize the model
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-002" });
-    
-    // Check if this is likely the first interaction
-    const isFirstMessage = isGreetingOrShortQuery(enhancedMessage) && !isSingleMoodQuery;
-    
-    // If it's the first message or a greeting, append instructions to ask about mood
-    const promptToSend = isFirstMessage 
-      ? `${enhancedMessage}\n\n[Remember to greet the user warmly and ask about their mood or what they feel like watching today]`
-      : enhancedMessage;
-    
-    // Create a chat session with the system prompt
-    const chat = model.startChat({
-      generationConfig: {
-        temperature: 0.7,
-        maxOutputTokens: 800, // Increased from 400 to allow longer responses
-      },
-      systemInstruction: SYSTEM_PROMPT,
-    });
-    
-    const result = await chat.sendMessage(promptToSend);
-    const response = result.response.text();
-    
-    // Cache this response
-    cacheResponse(userMessage, response);
-    
-    return { text: response, source: "api" };
-  } catch (error) {
-    console.error("Error with Gemini API:", error);
-    
-    // Check if it's a rate limit error (429)
-    const isRateLimit = error.message && (
-      error.message.includes("429") || 
-      error.message.includes("Quota exceeded") ||
-      error.message.includes("RATE_LIMIT_EXCEEDED")
-    );
-    
-    if (isRateLimit) {
-      console.log("Rate limit hit, using local fallback");
-      
-      // Check if it's a single-word mood query
-      const normalizedMsg = userMessage.toLowerCase().trim();
-      const isSingleMoodQuery = COMMON_MOODS.includes(normalizedMsg);
-      
-      return { 
-        text: getLocalMovieRecommendation(
-          isSingleMoodQuery ? `I'm feeling ${normalizedMsg}` : userMessage, 
-          true
         ), 
         source: "fallback"
       };
@@ -224,10 +182,15 @@ export const isMovieRelatedQuery = async (query) => {
   try {
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-002" });
     
+    // Include conversation history when checking if query is movie-related
+    const historyContext = conversationHistory.length > 0 
+      ? `\nConversation context: ${JSON.stringify(conversationHistory.slice(-3))}` 
+      : "";
+    
     const result = await model.generateContent(`
       Determine if the following query is related to movies, TV shows, actors, directors, fictional characters, or entertainment.
       Answer with only "YES" or "NO".
-      Query: "${query}"
+      Query: ${query}${historyContext}
     `);
     
     const response = result.response.text().trim();
@@ -244,6 +207,38 @@ export const isMovieRelatedQuery = async (query) => {
     // Assume it's movie-related if not clearly non-movie
     return !hasNonMovieKeywords;
   }
+};
+
+// Function to update conversation history
+export const updateConversationHistory = (userMessage, botResponse) => {
+  // Only add to history if userMessage is not empty (skip initial greetings)
+  if (userMessage.trim()) {
+    conversationHistory.push(
+      {
+        role: "user",
+        parts: [{ text: userMessage }]
+      },
+      {
+        role: "model",
+        parts: [{ text: botResponse }]
+      }
+    );
+    
+    // Keep only the last 10 exchanges (20 messages) to prevent context from getting too long
+    if (conversationHistory.length > 20) {
+      conversationHistory = conversationHistory.slice(-20);
+    }
+  }
+};
+
+// Function to clear conversation history
+export const clearConversationHistory = () => {
+  conversationHistory = [];
+};
+
+// Function to get current conversation history (for debugging)
+export const getConversationHistory = () => {
+  return [...conversationHistory];
 };
 
 // Helper function to detect if message is a greeting or short initial query

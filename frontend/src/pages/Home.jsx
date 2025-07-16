@@ -8,12 +8,17 @@ import ChatContainer from "../components/ChatContainer";
 import Footer from "../components/common/Footer";
 import Pagination from "../components/common/Pagination";
 import { Link } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import { FaUser } from "react-icons/fa";
+import AuthModal from "../components/auth/AuthModal";
 
-const API_BASE_URL = "https://trendingmoviebackend-fkde.onrender.com/api";
+// const API_BASE_URL = "https://trendingmoviebackend-fkde.onrender.com/api";
+const API_BASE_URL = "https://tmdbproxy-eedtf6bxbae2f4d3.westindia-01.azurewebsites.net/api";
 // Get TMDB credentials from environment variables
-const TMDB_API_KEY = import.meta.env.VITE_TMDB_API_KEY;
-const TMDB_ACCESS_TOKEN = import.meta.env.VITE_TMDB_API_KEY;
-const TMDB_BASE_URL = "https://api.themoviedb.org/3";
+
+// const TMDB_API_KEY = import.meta.env.VITE_TMDB_API_KEY;
+// const TMDB_ACCESS_TOKEN = import.meta.env.VITE_TMDB_API_KEY;
+// const TMDB_BASE_URL = "https://api.themoviedb.org/3";
 
 const Home = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -22,7 +27,9 @@ const Home = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [debouncedSearchTerm, setdebouncedSearchTerm] = useState('');
   const [trendingMovies, setTrendingMovies] = useState([]);
-  const [useDirectApi, setUseDirectApi] = useState(false);
+  // const [useDirectApi, setUseDirectApi] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const { currentUser } = useAuth();
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -30,97 +37,110 @@ const Home = () => {
 
   useDebounce(() => setdebouncedSearchTerm(searchTerm), 800, [searchTerm])
 
-  // Function to fetch data directly from TMDB using API key
-  const fetchFromTMDB = async (endpoint, query = "", page = 1) => {
-    let url = `${TMDB_BASE_URL}${endpoint}?api_key=${TMDB_API_KEY}&page=${page}`;
-    if (query) {
-      url += `&query=${encodeURIComponent(query)}`;
-    }
+  // // Function to fetch data directly from TMDB using API key
+  // const fetchFromTMDB = async (endpoint, query = "", page = 1) => {
+  //   let url = `${TMDB_BASE_URL}${endpoint}?api_key=${TMDB_API_KEY}&page=${page}`;
+  //   if (query) {
+  //     url += `&query=${encodeURIComponent(query)}`;
+  //   }
     
-    console.log(`Fetching from TMDB: ${url}`);
-    const response = await fetch(url);
-    if (!response.ok) {
-      console.error(`TMDB API error: ${response.status}`);
-      throw new Error(`TMDB API error: ${response.status}`);
-    }
-    return await response.json();
-  };
+  //   console.log(`Fetching from TMDB: ${url}`);
+  //   const response = await fetch(url);
+  //   if (!response.ok) {
+  //     console.error(`TMDB API error: ${response.status}`);
+  //     throw new Error(`TMDB API error: ${response.status}`);
+  //   }
+  //   return await response.json();
+  // };
 
   // Alternative function using Authorization header method
-  const fetchFromTMDBWithToken = async (endpoint, query = "", page = 1) => {
-    let url = `${TMDB_BASE_URL}${endpoint}?page=${page}`;
-    if (query) {
-      url += `&query=${encodeURIComponent(query)}`;
-    }
+  // const fetchFromTMDBWithToken = async (endpoint, query = "", page = 1) => {
+  //   let url = `${TMDB_BASE_URL}${endpoint}?page=${page}`;
+  //   if (query) {
+  //     url += `&query=${encodeURIComponent(query)}`;
+  //   }
     
-    const options = {
-      method: 'GET',
-      headers: {
-        accept: 'application/json',
-        Authorization: `Bearer ${TMDB_ACCESS_TOKEN}`
-      }
-    };
+  //   const options = {
+  //     method: 'GET',
+  //     headers: {
+  //       accept: 'application/json',
+  //       Authorization: `Bearer ${TMDB_ACCESS_TOKEN}`
+  //     }
+  //   };
     
-    const response = await fetch(url, options);
-    if (!response.ok) {
-      throw new Error(`TMDB API error: ${response.status}`);
-    }
-    return await response.json();
-  };
+  //   const response = await fetch(url, options);
+  //   if (!response.ok) {
+  //     throw new Error(`TMDB API error: ${response.status}`);
+  //   }
+  //   return await response.json();
+  // };
 
-  const fetchMovies = async (query = "", page = 1) => {
+  const fetchMovies = async (query = "", page = 1, retryCount = 0) => {
     setIsLoading(true);
     setErrorMessage("");
   
     try {
-      let data;
+      // Use our backend
+      const endpoint = `${API_BASE_URL}/movies?query=${encodeURIComponent(query)}&page=${page}`;
+      const response = await fetch(endpoint);
+  
+      // Handle different response statuses
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        
+        if (response.status === 503 && errorData.retryable && retryCount < 2) {
+          // Service unavailable but retryable - wait and retry
+          setErrorMessage("Service temporarily busy, retrying...");
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          return fetchMovies(query, page, retryCount + 1);
+        }
+        
+        if (response.status === 503 && errorData.fallback) {
+          // Circuit breaker is open, but we might have fallback data
+          if (errorData.results) {
+            setMovieList(errorData.results);
+            setTotalPages(errorData.total_pages || 1);
+            setErrorMessage("⚠️ Using cached data due to service issues");
+            return;
+          }
+        }
+        
+        throw new Error(errorData.error || `Server error: ${response.status}`);
+      }
+  
+      const data = await response.json();
       
-      if (useDirectApi) {
-        // Use TMDB API directly as fallback
-        try {
-          if (query) {
-            data = await fetchFromTMDB('/search/movie', query, page);
-          } else {
-            data = await fetchFromTMDB('/discover/movie', 'sort_by=popularity.desc', page);
-          }
-        } catch (err) {
-          console.log("API key method failed, trying token method:", err);
-          
-          if (query) {
-            data = await fetchFromTMDBWithToken('/search/movie', query, page);
-          } else {
-            data = await fetchFromTMDBWithToken('/discover/movie', '', page);
-          }
-        }
-      } else {
-        // Use our backend
-        const endpoint = `${API_BASE_URL}/movies?query=${encodeURIComponent(query)}&page=${page}`;
-        const response = await fetch(endpoint);
-    
-        if (!response.ok) {
-          console.log("Backend API failed, switching to direct TMDB API");
-          setUseDirectApi(true);
-          // Retry with direct API
-          return fetchMovies(query, page);
-        }
-    
-        data = await response.json();
+      // Handle fallback responses
+      if (data.fallback) {
+        setErrorMessage("⚠️ " + (data.message || "Using cached data"));
       }
       
       if (data.Response === "False") {
         setMovieList([]);
+        setTotalPages(0);
         return;
       }
-  
+
       setMovieList(data.results || []);
       setTotalPages(data.total_pages || 0);
+
   
       if (query && data.results && data.results.length > 0) {
         await updateSearchCount(query, data.results[0]);
       }
     } catch (error) {
       console.error(`Error fetching movies: ${error}`);
-      setErrorMessage("Failed to fetch movies. Please try again.");
+      
+      // Provide user-friendly error messages
+      if (error.message.includes('ECONNRESET')) {
+        setErrorMessage("Connection issue with movie service. Please try again in a moment.");
+      } else if (error.message.includes('timeout')) {
+        setErrorMessage("Request timed out. Please check your connection and try again.");
+      } else if (error.message.includes('503') || error.message.includes('temporarily unavailable')) {
+        setErrorMessage("Movie service is temporarily busy. Please try again in a few minutes.");
+      } else {
+        setErrorMessage("Failed to fetch movies. Please try again.");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -139,7 +159,7 @@ const Home = () => {
 
   useEffect(() => {
     fetchMovies(debouncedSearchTerm, currentPage);
-  }, [debouncedSearchTerm, currentPage]);
+  }, [debouncedSearchTerm, currentPage]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     loadTrendingMovies()
@@ -150,13 +170,37 @@ const Home = () => {
     window.scrollTo(0, 0);
   };
 
+  const toggleAuthModal = () => {
+    setShowAuthModal(!showAuthModal);
+  };
+
   return (
     <main>
       <div className="pattern"/>
       <div className="wrapper">
         <header>
+          {/* Add auth button in the top right corner */}
+          <div className="flex justify-end mb-4">
+            {currentUser ? (
+              <Link to="/profile" className="flex items-center gap-2 bg-indigo-700/50 hover:bg-indigo-700/70 text-white px-4 py-2 rounded-full transition-colors">
+                <div className="w-6 h-6 rounded-full bg-indigo-500 flex items-center justify-center text-sm font-bold">
+                  {currentUser.username.charAt(0).toUpperCase()}
+                </div>
+                <span>{currentUser.username}</span>
+              </Link>
+            ) : (
+              <button 
+                onClick={toggleAuthModal}
+                className="flex items-center gap-2 bg-indigo-700/50 hover:bg-indigo-700/70 text-white px-4 py-2 rounded-full transition-colors"
+              >
+                <FaUser />
+                <span>Sign In</span>
+              </button>
+            )}
+          </div>
+          
           <img src="/hero.png" alt="hero banner"></img>
-          <h1>Find <span className="text-gradient">Movies</span> You'll Love Without the Hassle</h1>
+          <h1>Find <span className="text-gradient">Movies</span> You&apos;ll Love Without the Hassle</h1>
           <Search searchTerm={searchTerm} setSearchTerm={setSearchTerm}/>
           
           {/* Improved Visual Recommender Button */}
@@ -245,6 +289,9 @@ const Home = () => {
       <ChatContainer />
       
       <Footer/>
+      
+      {/* Auth Modal */}
+      <AuthModal isOpen={showAuthModal} onClose={toggleAuthModal} />
     </main>
   )
 }

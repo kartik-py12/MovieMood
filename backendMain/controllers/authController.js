@@ -1,6 +1,6 @@
-const User = require('../models/User');
-
+import User from '../models/User.js';
 // Helper function to send token and save in cookie
+
 const sendTokenResponse = (user, statusCode, res) => {
   // Create token
   const token = user.getJwtToken();
@@ -9,7 +9,9 @@ const sendTokenResponse = (user, statusCode, res) => {
   const options = {
     expires: new Date(Date.now() + process.env.COOKIE_EXPIRE * 24 * 60 * 60 * 1000),
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production'
+    secure: true,
+    sameSite:"none",
+    
   };
 
   // Remove password from response
@@ -25,7 +27,7 @@ const sendTokenResponse = (user, statusCode, res) => {
 };
 
 // Register a user
-exports.register = async (req, res, next) => {
+export const register = async (req, res, next) => {
   try {
     const { username, email, password } = req.body;
 
@@ -52,7 +54,7 @@ exports.register = async (req, res, next) => {
 };
 
 // Login user
-exports.login = async (req, res, next) => {
+export const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
@@ -89,7 +91,7 @@ exports.login = async (req, res, next) => {
 };
 
 // Logout user
-exports.logout = (req, res) => {
+export const logout = (req, res) => {
   res.cookie('token', 'none', {
     expires: new Date(Date.now() + 10 * 1000),
     httpOnly: true
@@ -102,7 +104,7 @@ exports.logout = (req, res) => {
 };
 
 // Get current logged in user
-exports.getMe = async (req, res) => {
+export const getMe = async (req, res) => {
   const user = await User.findById(req.user.id);
 
   res.status(200).json({

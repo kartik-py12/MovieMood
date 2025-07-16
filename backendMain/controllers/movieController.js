@@ -1,7 +1,7 @@
-const User = require('../models/User');
+import User from '../models/User.js';
 
 // Like a movie
-exports.likeMovie = async (req, res, next) => {
+export const likeMovie = async (req, res, next) => {
   try {
     const { movieId, title, poster_path, media_type } = req.body;
 
@@ -51,7 +51,7 @@ exports.likeMovie = async (req, res, next) => {
 };
 
 // Add/remove movie to/from watchlist
-exports.toggleWatchlist = async (req, res, next) => {
+export const toggleWatchlist = async (req, res, next) => {
   try {
     const { movieId, title, poster_path, media_type } = req.body;
 
@@ -101,7 +101,7 @@ exports.toggleWatchlist = async (req, res, next) => {
 };
 
 // Mark movie as watched
-exports.toggleWatched = async (req, res, next) => {
+export const toggleWatched = async (req, res, next) => {
   try {
     const { movieId, title, poster_path, media_type, rating } = req.body;
 
@@ -166,7 +166,7 @@ exports.toggleWatched = async (req, res, next) => {
 };
 
 // Get movie status (liked, watchlist, watched) for a user
-exports.getMovieStatus = async (req, res, next) => {
+export const getMovieStatus = async (req, res, next) => {
   try {
     const { movieId } = req.params;
     const user = await User.findById(req.user.id);

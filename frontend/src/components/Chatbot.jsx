@@ -1,20 +1,19 @@
 import { useState, useRef, useEffect } from 'react';
 import { FaPaperPlane, FaTimes, FaForward } from 'react-icons/fa';
-import { getMovieRecommendationsWithHistory, isMovieRelatedQuery } from '../utils/geminiAPI';
+import { getMovieRecommendationsWithHistory, isMovieRelatedQuery, updateConversationHistory } from '../utils/geminiAPI';
 import { Link } from 'react-router-dom';
 
 const Chatbot = ({ closeChatbot, isMovieDetail = false, movieTitle = null }) => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [conversationContext, setConversationContext] = useState([]);
   
   // States for typing effect
   const [isTyping, setIsTyping] = useState(false);
   const [currentTypingIndex, setCurrentTypingIndex] = useState(-1);
   const [displayedText, setDisplayedText] = useState("");
   const [fullText, setFullText] = useState("");
-  const [typingSpeed, setTypingSpeed] = useState(15); // ms per character
+  const [typingSpeed] = useState(15); // ms per character
   const [skipTyping, setSkipTyping] = useState(false);
   
   const messagesEndRef = useRef(null);
@@ -29,10 +28,7 @@ const Chatbot = ({ closeChatbot, isMovieDetail = false, movieTitle = null }) => 
         : "Hi! I'm MovieMood's AI assistant. Tell me what kind of movies you're in the mood for, and I'll suggest some great options for you.";
       
       setMessages([{ text: initialMessage, isUser: false, fullyTyped: true }]);
-      setConversationContext([{
-        role: "assistant",
-        parts: [{ text: initialMessage }]
-      }]);
+      // Don't initialize conversation history with empty user message - let it start fresh
     }
   }, [messages.length, isMovieDetail, movieTitle]);
 
@@ -124,12 +120,6 @@ const Chatbot = ({ closeChatbot, isMovieDetail = false, movieTitle = null }) => 
     const userMessage = input.trim();
     setMessages(prev => [...prev, { text: userMessage, isUser: true, fullyTyped: true }]);
     
-    const updatedContext = [
-      ...conversationContext,
-      { role: "user", parts: [{ text: userMessage }] }
-    ];
-    setConversationContext(updatedContext);
-    
     setInput("");
     setIsLoading(true);
     
@@ -138,10 +128,7 @@ const Chatbot = ({ closeChatbot, isMovieDetail = false, movieTitle = null }) => 
       const isRelevant = await isMovieRelatedQuery(userMessage);
       
       if (isRelevant) {
-        const response = await getMovieRecommendationsWithHistory(
-          userMessage, 
-          updatedContext
-        );
+        const response = await getMovieRecommendationsWithHistory(userMessage);
         
         // Instead of adding the complete message first and then starting the typing effect,
         // we'll add a placeholder message and start typing immediately
@@ -156,11 +143,8 @@ const Chatbot = ({ closeChatbot, isMovieDetail = false, movieTitle = null }) => 
           }
         ]);
         
-        // Update conversation context
-        setConversationContext([
-          ...updatedContext,
-          { role: "assistant", parts: [{ text: response.text }] }
-        ]);
+        // Update conversation history centrally
+        updateConversationHistory(userMessage, response.text);
         
         // Start typing effect immediately
         setTimeout(() => {
@@ -180,13 +164,8 @@ const Chatbot = ({ closeChatbot, isMovieDetail = false, movieTitle = null }) => 
           }
         ]);
         
-        setConversationContext([
-          ...updatedContext,
-          { 
-            role: "assistant", 
-            parts: [{ text: notRelevantMessage }] 
-          }
-        ]);
+        // Update conversation history centrally
+        updateConversationHistory(userMessage, notRelevantMessage);
         
         // Start typing effect immediately
         setTimeout(() => {
@@ -386,7 +365,7 @@ const Chatbot = ({ closeChatbot, isMovieDetail = false, movieTitle = null }) => 
       </form>
       
       {/* Custom CSS for typing animation */}
-      <style jsx>{`
+      <style>{`
         .typing-dot {
           width: 8px;
           height: 8px;

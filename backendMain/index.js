@@ -1,26 +1,30 @@
-require('dotenv').config();
-const express = require('express');
-const mongoose = require('mongoose');
-const cors = require('cors');
-const cookieParser = require('cookie-parser');
+import express from "express";
+import mongoose from "mongoose";
+import cookieParser from "cookie-parser";
+import cors from "cors"
+import dotenv from "dotenv";
+
+// Configure dotenv
+dotenv.config();
 
 // Import routes
-const authRoutes = require('./routes/authRoutes');
-const userRoutes = require('./routes/userRoutes');
-const movieRoutes = require('./routes/movieRoutes');
+import authRoutes from "./routes/authRoutes.js";
+import userRoutes from "./routes/userRoutes.js";
+import movieRoutes from "./routes/movieRoutes.js";
+import moodRoutes from "./routes/moodRoutes.js";
 
 const app = express();
-
+console.log(process.env.PORT);
 // Middleware
 app.use(cors({
-  origin: 'http://localhost:5173', // React app URL
+  origin: ['http://localhost:5173','https://moviemoodai.vercel.app'], // React app URL
   credentials: true,
 }));
 app.use(express.json());
 app.use(cookieParser());
 
 // Database connection
-mongoose.connect('mongodb+srv://zoro:zoro@cluster0.cd5q8yz.mongodb.net/movieApp?retryWrites=true&w=majority&appName=Cluster0')
+mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('Connected to MongoDB'))
   .catch(err => console.error('Could not connect to MongoDB', err));
 
@@ -28,6 +32,7 @@ mongoose.connect('mongodb+srv://zoro:zoro@cluster0.cd5q8yz.mongodb.net/movieApp?
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/movies', movieRoutes);
+app.use('/api/mood', moodRoutes);
 
 // Health check route
 app.get('/api/health', (req, res) => {

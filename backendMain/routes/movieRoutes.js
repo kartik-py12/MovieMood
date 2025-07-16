@@ -1,11 +1,11 @@
-const express = require('express');
-const { 
+import express from 'express';
+import { 
   likeMovie, 
   toggleWatchlist, 
   toggleWatched, 
   getMovieStatus 
-} = require('../controllers/movieController');
-const { isAuthenticated } = require('../middleware/auth');
+} from '../controllers/movieController.js';
+import { isAuthenticated } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -17,4 +17,4 @@ router.post('/watchlist', toggleWatchlist);
 router.post('/watched', toggleWatched);
 router.get('/status/:movieId', getMovieStatus);
 
-module.exports = router;
+export default router;
