@@ -1,6 +1,6 @@
 # MovieMood - AI-Powered Film Recommendation App
 
-![MovieMood Banner](/public/hero.png)
+![MovieMood Banner](frontend/public/hero.png)
 
 ## Overview
 
