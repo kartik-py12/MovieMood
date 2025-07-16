@@ -9,7 +9,7 @@ import Footer from "../components/common/Footer";
 import Pagination from "../components/common/Pagination";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { FaUser } from "react-icons/fa";
+import { FaUser,FaHeart,FaBookmark,FaCheck } from "react-icons/fa";
 import AuthModal from "../components/auth/AuthModal";
 
 // const API_BASE_URL = "https://trendingmoviebackend-fkde.onrender.com/api";
@@ -124,7 +124,7 @@ const Home = () => {
 
       setMovieList(data.results || []);
       setTotalPages(data.total_pages || 0);
-
+      console.error(errorMessage);
   
       if (query && data.results && data.results.length > 0) {
         try {
@@ -177,9 +177,7 @@ const Home = () => {
     window.scrollTo(0, 0);
   };
 
-  const toggleAuthModal = () => {
-    setShowAuthModal(!showAuthModal);
-  };
+
 
   const toggleAuthModal = () => {
     setShowAuthModal(!showAuthModal);
@@ -190,25 +188,7 @@ const Home = () => {
       <div className="pattern"/>
       <div className="wrapper">
         <header>
-          {/* Add auth button in the top right corner */}
-          <div className="flex justify-end mb-4">
-            {currentUser ? (
-              <Link to="/profile" className="flex items-center gap-2 bg-indigo-700/50 hover:bg-indigo-700/70 text-white px-4 py-2 rounded-full transition-colors">
-                <div className="w-6 h-6 rounded-full bg-indigo-500 flex items-center justify-center text-sm font-bold">
-                  {currentUser.username.charAt(0).toUpperCase()}
-                </div>
-                <span>{currentUser.username}</span>
-              </Link>
-            ) : (
-              <button 
-                onClick={toggleAuthModal}
-                className="flex items-center gap-2 bg-indigo-700/50 hover:bg-indigo-700/70 text-white px-4 py-2 rounded-full transition-colors"
-              >
-                <FaUser />
-                <span>Sign In</span>
-              </button>
-            )}
-          </div>
+
           
           {/* Add auth button in the top right corner */}
           <div className="flex justify-end mb-4">

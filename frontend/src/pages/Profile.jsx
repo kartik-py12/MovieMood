@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, Navigate } from 'react-router-dom';
-import { FaArrowLeft, FaHeart, FaBookmark, FaCheck, FaClock, FaCalendarAlt, FaStar } from 'react-icons/fa';
+import { FaArrowLeft, FaHeart, FaBookmark, FaCheck, FaClock } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 import Footer from '../components/common/Footer';
 import Spinner from '../components/Spinner';

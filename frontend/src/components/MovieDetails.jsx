@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useParams} from 'react-router-dom';
 import { FaPlay, FaStar, FaCalendarAlt, FaClock } from 'react-icons/fa';
 import { tmdbApi } from '../utils/tmdbApi';
 import Loader from './common/Loader';
@@ -13,7 +13,7 @@ import './MovieDetails.css';
 
 const MovieDetails = () => {
   const { id } = useParams();
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
   
   const [movie, setMovie] = useState(null);
   const [cast, setCast] = useState([]);
@@ -38,7 +38,7 @@ const MovieDetails = () => {
     const options = { year: 'numeric', month: 'long', day: 'numeric' };
     return new Date(dateString).toLocaleDateString(undefined, options);
   };
-
+  
   const fetchMovieDetails = async () => {
     setLoading(true);
     setError(null);
